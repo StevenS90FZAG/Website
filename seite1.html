@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bewegungsstatistik – Flughafen Zürich – 1. Quadrant</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+  --btn-bg:#d1d5db;
+  --btn-hover:#9ca3af;
+  --btn-active:#004bb5;
+  --border:#ddd;
+  --bg-th:#f5f5f7;
+  --bg-row:#fafafa;
+  --container:1400px;
+  --padX:16px;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+
+/* ================= HEADER ================= */
+header{
+  padding:20px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  grid-template-rows:auto auto auto;
+  gap:12px;
+  align-items:center;
+}
+
+/* Titel */
+.header-title{
+  grid-column:1 / -1;
+  grid-row:1;
+  font-size:24px;
+  font-weight:600;
+}
+
+/* BW Buttons unter Titel */
+.bw-toggle.bw-row{
+  grid-column:1 / -1;
+  grid-row:2;
+  display:flex;
+  gap:8px;
+}
+
+/* Zeitfilter links unten */
+.time-toggle{
+  grid-column:1;
+  grid-row:3;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+/* Charts/Tabelle rechts unten */
+.top-right{
+  grid-column:2;
+  grid-row:3;
+  display:flex;
+  gap:8px;
+  justify-self:end;
+}
+
+/* ================= BUTTONS ================= */
+.btn{
+  padding:8px 14px;
+  border:none;
+  background:var(--btn-bg);
+  font-weight:600;
+  cursor:pointer;
+}
+.btn:hover{ background:var(--btn-hover); }
+.btn.active{ background:var(--btn-active); color:#fff; }
+
+/* ================= VIEWS ================= */
+.view{
+  display:none;
+  max-width:var(--container);
+  margin:0 auto;
+  padding:0 var(--padX);
+}
+.view.active{ display:block; }
+
+/* ================= TABLE ================= */
+table{
+  border-collapse:collapse;
+  width:100%;
+  font-size:14px;
+}
+th,td{
+  border:1px solid var(--border);
+  padding:6px 8px;
+  white-space:nowrap;
+}
+th{ background:var(--bg-th); }
+tr:nth-child(even){ background:var(--bg-row); }
+
+/* ================= CHARTS ================= */
+.charts-wrap{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+}
+.charts-wrap.second-row{
+  grid-template-columns:1fr 1fr;
+}
+.chart-box{ height:360px; }
+canvas{ width:100%!important; height:100%!important; }
+
+.custom-date{
+  display:none;
+  gap:8px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-title">
+    Bewegungsstatistik – Flughafen Zürich – 1. Quadrant
+  </div>
+
+  <!-- BW Buttons unter Titel -->
+  <div class="bw-toggle bw-row">
+    <button id="bwStart" class="btn active">Abflug</button>
+    <button id="bwLand" class="btn">Anflug</button>
+    <button id="bwAll" class="btn">Alle</button>
+  </div>
+
+  <!-- Zeitfilter links unten -->
+  <div class="time-toggle">
+    <button id="btnYesterday" class="btn">Gestern</button>
+    <button id="btnToday" class="btn">Heute</button>
+    <button id="btnWeek" class="btn">Woche</button>
+    <button id="btnMonth" class="btn">Monat</button>
+    <button id="btnYear" class="btn">Jahr</button>
+    <button id="btnCustom" class="btn">Benutzerdefiniert</button>
+
+    <div class="custom-date">
+      <input type="date" id="customStart">
+      <input type="date" id="customEnd">
+      <button id="applyCustom" class="btn">Anwenden</button>
+    </div>
+  </div>
+
+  <!-- Charts/Tabelle rechts unten -->
+  <div class="top-right">
+    <button id="btnCharts" class="btn active">Grafische Darstellung</button>
+    <button id="btnTable" class="btn">Tabelle</button>
+  </div>
+</header>
+
+<section id="viewCharts" class="view active">
+  <div class="charts-wrap">
+    <div class="chart-box"><canvas id="chartRT"></canvas></div>
+    <div class="chart-box"><canvas id="chartDayNight"></canvas></div>
+    <div class="chart-box"><canvas id="chartRW"></canvas></div>
+  </div>
+  <div class="charts-wrap second-row">
+    <div class="chart-box"><canvas id="chartFTYP"></canvas></div>
+    <div class="chart-box"><canvas id="chartLK"></canvas></div>
+  </div>
+</section>
+
+<section id="viewTable" class="view">
+  <div id="table-container"></div>
+</section>
+
+<script>
+(async function(){
+
+/* ===== CSV LADEN ===== */
+const res = await fetch("Data.csv",{cache:"no-store"});
+const text = await res.text();
+const lines = text.replace(/\r/g,"").trim().split("\n");
+if(lines.length < 2) return;
+
+const sep = lines[0].includes(";") ? ";" : ",";
+const headers = lines[0].split(sep).map(h=>h.trim());
+const idx = Object.fromEntries(headers.map((h,i)=>[h,i]));
+
+const bwCol=idx.BW, dtCol=idx.DatZeit_UTC, ftypCol=idx.FTYP,
+      rwCol=idx.RW, rtCol=idx.RT, lkCol=idx.LK;
+
+/* ===== DATUM ===== */
+function parseDate(v){
+  if(!v) return null;
+  const [d,t]=v.split(" ");
+  const [dd,mm,yy]=d.split(".");
+  const [h,m]=t.split(":");
+  return new Date(yy,mm-1,dd,h,m);
+}
+
+/* ===== DATEN ===== */
+const allRows = lines.slice(1)
+  .map(l=>l.split(sep))
+  .filter(r=>r[dtCol]);
+
+let bwFilter="S";
+let timeFilter=null;
+
+let barRT, barRW, barFTYP, barLK, pieDayNight;
+
+/* ===== ZEITFILTER ===== */
+function inTimeRange(v, range){
+  const date=parseDate(v);
+  if(!date) return false;
+  const now=new Date();
+
+  switch(range){
+    case "today": return date.toDateString()===now.toDateString();
+    case "yesterday":
+      const y=new Date(); y.setDate(now.getDate()-1);
+      return date.toDateString()===y.toDateString();
+    case "week":
+      const w=new Date(); w.setDate(now.getDate()-6);
+      return date>=w && date<=now;
+    case "month":
+      return date.getMonth()===now.getMonth() && date.getFullYear()===now.getFullYear();
+    case "year":
+      return date.getFullYear()===now.getFullYear();
+    case "custom":
+      if(!customStart.value || !customEnd.value) return true;
+      return date>=new Date(customStart.value) && date<=new Date(customEnd.value);
+    default: return true;
+  }
+}
+
+/* ===== BUTTONS ===== */
+bwStart.onclick=()=>{bwFilter="S";setBW(bwStart)};
+bwLand.onclick =()=>{bwFilter="L";setBW(bwLand)};
+bwAll.onclick  =()=>{bwFilter=null;setBW(bwAll)};
+
+function setBW(btn){
+  [bwStart,bwLand,bwAll].forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  applyFilter();
+}
+
+const timeBtns=[btnYesterday,btnToday,btnWeek,btnMonth,btnYear,btnCustom];
+timeBtns.forEach(btn=>{
+  btn.onclick=()=>{
+    timeBtns.forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    timeFilter=btn.id.replace("btn","").toLowerCase();
+    document.querySelector(".custom-date").style.display=
+      timeFilter==="custom"?"flex":"none";
+    applyFilter();
+  };
+});
+
+applyCustom.onclick=()=>applyFilter();
+
+btnCharts.onclick=()=>setView(true);
+btnTable.onclick =()=>setView(false);
+
+function setView(charts){
+  viewCharts.classList.toggle("active",charts);
+  viewTable.classList.toggle("active",!charts);
+  btnCharts.classList.toggle("active",charts);
+  btnTable.classList.toggle("active",!charts);
+}
+
+/* ===== TABELLE ===== */
+function renderTable(rows){
+  // 1. Nach Datum gruppieren und RW zählen
+  const dailyMap = {};
+  const allRWs = Array.from(new Set(rows.map(r => r[rwCol] || "Unbekannt"))).sort();
+
+  rows.forEach(r => {
+    const date = parseDate(r[dtCol]);
+    if(!date) return;
+
+    const dayKey = `${String(date.getDate()).padStart(2,"0")}.${String(date.getMonth()+1).padStart(2,"0")}.${date.getFullYear()}`;
+    const rw = r[rwCol] || "Unbekannt";
+
+    if(!dailyMap[dayKey]) dailyMap[dayKey] = {};
+    dailyMap[dayKey][rw] = (dailyMap[dayKey][rw] || 0) + 1;
+  });
+
+  // Tabelle erstellen
+  const table = document.createElement("table");
+
+  // Header
+  const trHead = document.createElement("tr");
+  const thDate = document.createElement("th");
+  thDate.textContent = "Datum";
+  trHead.appendChild(thDate);
+
+  allRWs.forEach(rw => {
+    const th = document.createElement("th");
+    th.textContent = rw;
+    trHead.appendChild(th);
+  });
+
+  const thTotal = document.createElement("th");
+  thTotal.textContent = "Total";
+  trHead.appendChild(thTotal);
+  table.appendChild(trHead);
+
+  // Datenzeilen
+  Object.keys(dailyMap).sort((a,b) => {
+    const da = parseDate(a+" 00:00");
+    const db = parseDate(b+" 00:00");
+    return da - db;
+  }).forEach(day => {
+    const tr = document.createElement("tr");
+    const tdDate = document.createElement("td");
+    tdDate.textContent = day;
+    tr.appendChild(tdDate);
+
+    let rowTotal = 0;
+    allRWs.forEach(rw => {
+      const val = dailyMap[day][rw] || 0;
+      rowTotal += val;
+      const td = document.createElement("td");
+      td.textContent = val;
+      tr.appendChild(td);
+    });
+
+    const tdTotal = document.createElement("td");
+    tdTotal.textContent = rowTotal;
+    tr.appendChild(tdTotal);
+
+    table.appendChild(tr);
+  });
+
+  // Tabelle ins DOM
+  document.getElementById("table-container").replaceChildren(table);
+}
+
+
+/* ===== CHARTS ===== */
+function updateCharts(rows){
+  const count = col => rows.reduce((a,r)=>{
+    const k=r[col]||"Unbekannt"; a[k]=(a[k]||0)+1; return a;
+  },{});
+
+  barRT?.destroy();
+  barRW?.destroy();
+  barFTYP?.destroy();
+  barLK?.destroy();
+  pieDayNight?.destroy();
+
+  barRT=new Chart(chartRT,{type:"bar",data:{labels:Object.keys(count(rtCol)),datasets:[{data:Object.values(count(rtCol))}]},options:{maintainAspectRatio:false}});
+  barRW=new Chart(chartRW,{type:"bar",data:{labels:Object.keys(count(rwCol)),datasets:[{data:Object.values(count(rwCol))}]},options:{maintainAspectRatio:false}});
+  barFTYP=new Chart(chartFTYP,{type:"bar",data:{labels:Object.keys(count(ftypCol)),datasets:[{data:Object.values(count(ftypCol))}]},options:{maintainAspectRatio:false}});
+  barLK=new Chart(chartLK,{type:"bar",data:{labels:Object.keys(count(lkCol)),datasets:[{data:Object.values(count(lkCol))}]},options:{maintainAspectRatio:false}});
+
+  const dn={Tag:0,Nacht:0};
+  rows.forEach(r=>{
+    const h=parseDate(r[dtCol]).getHours();
+    h>=6&&h<22 ? dn.Tag++ : dn.Nacht++;
+  });
+
+  pieDayNight=new Chart(chartDayNight,{
+    type:"pie",
+    data:{labels:Object.keys(dn),datasets:[{data:Object.values(dn)}]},
+    options:{maintainAspectRatio:false}
+  });
+}
+
+/* ===== FILTER ===== */
+function applyFilter(){
+  let rows=[...allRows];
+  if(bwFilter) rows=rows.filter(r=>r[bwCol]===bwFilter);
+  if(timeFilter) rows=rows.filter(r=>inTimeRange(r[dtCol],timeFilter));
+  updateCharts(rows);
+  renderTable(rows);
+}
+
+applyFilter();
+})();
+</script>
+
+<!-- Zurück-Button -->
+<div style="text-align:center; margin:30px 0;">
+  <a href="index.html" class="btn" 
+     style="background:var(--btn-active); color:#fff; text-decoration:none;">
+    Zurück
+  </a>
+</div>
+
+
+
+</body>
+</html>

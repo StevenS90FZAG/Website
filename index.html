@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewegungsstatistik - Flughafen Zürich</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fff;
+            color: #000;
+            text-align: center;
+        }
+
+        header {
+            padding: 20px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .content {
+            margin-top: 80px;
+        }
+
+        /* Image container mit CSS-Variablen für Mittelpunkt */
+        .image-container {
+            --x: 0.568; /* horizontaler Mittelpunkt (0 = links, 1 = rechts) --> ca. Pistenkreuz */ 
+            --y: 0.645; /* vertikaler Mittelpunkt (0 = oben, 1 = unten) --> ca. Pistenkreuz */
+            position: relative;
+            display: inline-block;
+            max-width: 720px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Quadrant links mit verschiebbarem Mittelpunkt */
+        .quadrant {
+            position: absolute;
+            text-decoration: none;
+        }
+
+        /* Positionierung und Größe abhängig von --x und --y */
+        .q1 {
+            top: 0;
+            left: 0;
+            width: calc(var(--x) * 100%);
+            height: calc(var(--y) * 100%);
+        }
+        .q2 {
+            top: 0;
+            left: calc(var(--x) * 100%);
+            width: calc((1 - var(--x)) * 100%);
+            height: calc(var(--y) * 100%);
+        }
+        .q3 {
+            top: calc(var(--y) * 100%);
+            left: 0;
+            width: calc(var(--x) * 100%);
+            height: calc((1 - var(--y)) * 100%);
+        }
+        .q4 {
+            top: calc(var(--y) * 100%);
+            left: calc(var(--x) * 100%);
+            width: calc((1 - var(--x)) * 100%);
+            height: calc((1 - var(--y)) * 100%);
+        }
+
+        /* Optionaler Hover-Effekt */
+        .quadrant:hover {
+            background-color: rgba(0, 113, 227, 0.12);
+        }
+
+        /* Impressum unten rechts */
+        .impressum {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <header>Bewegungsstatistik - Flughafen Zürich</header>
+
+    <div class="content">
+        <h1>Wo wohnen Sie?</h1>
+        <p>Klicken Sie auf Ihre Umgebung um den Flughafen Zürich.</p>
+
+        <div class="image-container">
+            <img src="ZRH_1.PNG" alt="Bewegungsübersicht">
+
+            <a href="seite1.html" class="quadrant q1" aria-label="Seite 1"></a>
+            <a href="seite2.html" class="quadrant q2" aria-label="Seite 2"></a>
+            <a href="seite3.html" class="quadrant q3" aria-label="Seite 3"></a>
+            <a href="seite4.html" class="quadrant q4" aria-label="Seite 4"></a>
+        </div>
+    </div>
+
+    <div class="impressum">Impressum: Abteilung OVL - Flughafen Zürich</div>
+</body>
+</html>
