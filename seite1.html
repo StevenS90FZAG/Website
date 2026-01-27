@@ -8,151 +8,154 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root{
-  --primary:#004bb5;
-  --primary-light:#e8f0ff;
-  --bg:#f4f6fa;
-  --card:#ffffff;
-  --border:#dcdfe6;
-  --text:#1f2937;
-  --radius:10px;
-  --shadow:0 4px 12px rgba(0,0,0,.06);
-  --container:1400px;
-}
-
-*{box-sizing:border-box;}
-
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-}
-
-/* ================= HEADER ================= */
-header{
-  max-width:var(--container);
-  margin:24px auto;
-  padding:20px;
-  background:var(--card);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  display:grid;
-  grid-template-columns:1fr auto;
-  grid-template-rows:auto auto auto;
-  gap:16px;
-}
-
-.header-title{
-  grid-column:1 / -1;
-  grid-row:1;
-  font-size:26px;
-  font-weight:600;
-}
-
-.bw-row{
-  grid-column:1 / -1;
-  grid-row:2;
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-}
-
-.time-toggle{
-  grid-column:1;
-  grid-row:3;
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-}
-
-.top-right{
-  grid-column:2;
-  grid-row:3;
-  display:flex;
-  gap:8px;
-  justify-self:end;
-}
-
-/* ================= BUTTONS ================= */
-.btn{
-  padding:8px 16px;
-  border-radius:6px;
-  border:1px solid var(--border);
-  background:#fff;
-  cursor:pointer;
-  font-weight:500;
-  text-decoration:none;
-  display:inline-block;
-  transition: background 0.2s;
-}
-.btn:hover{ background:var(--primary-light); }
-.btn.active{
-  background:var(--primary);
-  color:#fff;
-  border-color:var(--primary);
-}
-
-.custom-date{
-  display:none;
-  gap:8px;
-}
-
-/* ================= VIEWS ================= */
-.view{
-  display:none;
-  max-width:var(--container);
-  margin:0 auto;
-  padding:0 16px 24px;
-}
-.view.active{ display:block; }
-
-/* ================= CARDS ================= */
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:16px;
-}
-
-/* ================= CHARTS ================= */
-.charts-wrap{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-  gap:16px;
-}
-.chart-box{ height:360px; }
-
-/* ================= TABLE ================= */
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
-}
-th, td{
-  padding:8px 10px;
-  border-bottom:1px solid var(--border);
-}
-th{
-  background:#004bb5;   /* Primärfarbe */
-  color:#ffffff;        /* weiße Schrift */
-  text-align:left;
-}
-
-/* ================= FOOTER ================= */
-.footer{
-  text-align:center;
-  margin:30px 0;
-}
-
-/* Impressum unten rechts */
-.impressum {
+  :root{
+    --primary:#004bb5;
+    --primary-light:#e8f0ff;
+    --bg:#f4f6fa;
+    --card:#ffffff;
+    --border:#dcdfe6;
+    --text:#1f2937;
+    --radius:10px;
+    --shadow:0 4px 12px rgba(0,0,0,.06);
+    --container:1400px;
+  }
+  
+  *{box-sizing:border-box;}
+  
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  
+  /* ================= HEADER ================= */
+  header {
+    max-width: var(--container);
+    margin: 24px auto;
+    padding: 20px 24px;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .header-title {
+    font-size: 26px;
+    font-weight: 600;
+  }
+  
+  /* Button-Gruppen */
+  .button-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  
+  .button-group.scrollable {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  
+  .button-group.scrollable::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .button-group.scrollable::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+  }
+  
+  /* Letzte Zeile: Prozedere links, View-Buttons rechts */
+  .header-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  
+  .btn:hover{ background:var(--primary-light); }
+  .btn.active{
+    background:var(--primary);
+    color:#fff;
+    border-color:var(--primary);
+  }
+  
+  .custom-date{
+    display:none;
+    gap:8px;
+  }
+  
+  /* Views */
+  .view{
+    display:none;
+    max-width:var(--container);
+    margin:0 auto;
+    padding:0 16px 24px;
+  }
+  .view.active{ display:block; }
+  
+  /* Cards */
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px;
+  }
+  
+  /* Charts */
+  .charts-wrap{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:16px;
+  }
+  .chart-box{ height:360px; }
+  
+  /* Table */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  th, td{
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  th{
+    background:#004bb5;
+    color:#fff;
+    text-align:left;
+  }
+  
+  /* Footer */
+  .footer{
+    text-align:center;
+    margin:30px 0;
+  }
+  
+  .impressum {
     position: fixed;
     bottom: 10px;
     right: 10px;
     font-size: 12px;
     color: #555;
-}
+  }
 </style>
 </head>
 
@@ -161,13 +164,8 @@ th{
 <header>
   <div class="header-title">Bewegungsstatistik – Flughafen Zürich – 1. Quadrant</div>
 
-  <div class="bw-row">
-    <button id="bwStart" class="btn active">Abflug</button>
-    <button id="bwLand" class="btn">Anflug</button>
-    <button id="bwAll" class="btn">Alle</button>
-  </div>
-
-  <div class="time-toggle">
+  <!-- Zeile 1: Zeitraum -->
+  <div class="button-group scrollable" id="time-toggle">
     <button id="btnYesterday" class="btn">Gestern</button>
     <button id="btnToday" class="btn">Heute</button>
     <button id="btnWeek" class="btn">Woche</button>
@@ -182,9 +180,25 @@ th{
     </div>
   </div>
 
-  <div class="top-right">
-    <button id="btnCharts" class="btn active">Grafiken</button>
-    <button id="btnTable" class="btn">Tabelle</button>
+  <!-- Zeile 2: Zeitfenster -->
+  <div class="button-group" id="time-of-day">
+    <button id="tdMorning" class="btn">Morgens 06-07</button>
+    <button id="tdDay" class="btn active">Tag 07-22</button>
+    <button id="tdNight" class="btn">Nacht 22-06</button>
+    <button id="tdAll" class="btn">Ganzer Tag</button>
+  </div>
+
+  <!-- Zeile 3: Prozedere links, View-Buttons rechts -->
+  <div class="header-bottom">
+    <div class="button-group" id="bw-row">
+      <button id="bwStart" class="btn active">Abflug</button>
+      <button id="bwLand" class="btn">Anflug</button>
+      <button id="bwAll" class="btn">Alle</button>
+    </div>
+    <div class="view-switch">
+      <button id="btnCharts" class="btn active">Grafiken</button>
+      <button id="btnTable" class="btn">Tabelle</button>
+    </div>
   </div>
 </header>
 
@@ -235,6 +249,7 @@ const allRows = lines.slice(1)
 
 let bwFilter="S";
 let timeFilter=null;
+let highlightTime="day";
 
 let chartRoute, chartRW, chartFTYP, chartLK, chartDayNight;
 
@@ -266,12 +281,7 @@ function inTimeRange(v, range){
 bwStart.onclick=()=>{bwFilter="S";setBW(bwStart)};
 bwLand.onclick =()=>{bwFilter="L";setBW(bwLand)};
 bwAll.onclick  =()=>{bwFilter=null;setBW(bwAll)};
-
-function setBW(btn){
-  [bwStart,bwLand,bwAll].forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  applyFilter();
-}
+function setBW(btn){ [bwStart,bwLand,bwAll].forEach(b=>b.classList.remove("active")); btn.classList.add("active"); applyFilter(); }
 
 const timeBtns=[btnYesterday,btnToday,btnWeek,btnMonth,btnYear,btnCustom];
 timeBtns.forEach(btn=>{
@@ -284,17 +294,133 @@ timeBtns.forEach(btn=>{
     applyFilter();
   };
 });
-
 applyCustom.onclick=()=>applyFilter();
 
 btnCharts.onclick=()=>setView(true);
 btnTable.onclick =()=>setView(false);
-
 function setView(charts){
   viewCharts.classList.toggle("active",charts);
   viewTable.classList.toggle("active",!charts);
   btnCharts.classList.toggle("active",charts);
   btnTable.classList.toggle("active",!charts);
+}
+
+// ===== Zeitfenster-Buttons =====
+tdMorning.onclick=()=>setHighlight("morning");
+tdDay.onclick    =()=>setHighlight("day");
+tdNight.onclick  =()=>setHighlight("night");
+tdAll.onclick    =()=>setHighlight("all");
+
+function setHighlight(h){
+  highlightTime=h;
+  [tdMorning,tdDay,tdNight,tdAll].forEach(b=>b.classList.remove("active"));
+  if(h==="morning") tdMorning.classList.add("active");
+  if(h==="day") tdDay.classList.add("active");
+  if(h==="night") tdNight.classList.add("active");
+  if(h==="all") tdAll.classList.add("active");
+  applyFilter();
+}
+
+function highlightByTime(r){
+  const date=parseDate(r[dtCol]);
+  if(!date) return false;
+  const h=date.getHours();
+  if(highlightTime==="morning") return h>=6 && h<7;
+  if(highlightTime==="day") return h>=7 && h<22;
+  if(highlightTime==="night") return h>=22 || h<6;
+  return true; // all
+}
+
+function getBWText(){
+  if(bwFilter==="S") return "Abflüge";
+  if(bwFilter==="L") return "Anflüge";
+  return "An-/Abflüge";
+}
+
+function chartOpts(){ return {responsive:true, maintainAspectRatio:false, devicePixelRatio:window.devicePixelRatio||1, animation:false}; }
+
+function updateCharts(rows){
+  const countByHighlight=(col)=>{
+    const dataMap={};
+    rows.forEach(r=>{
+      const k=r[col]||"Unbekannt";
+      if(!dataMap[k]) dataMap[k]={highlight:0,other:0};
+      if(highlightByTime(r)) dataMap[k].highlight++;
+      else dataMap[k].other++;
+    });
+    return dataMap;
+  };
+
+  chartRoute?.destroy(); chartRW?.destroy(); chartFTYP?.destroy(); chartLK?.destroy(); chartDayNight?.destroy();
+
+  const makeStackedData=(col)=>{
+    const d=countByHighlight(col);
+    const labels=Object.keys(d);
+    const highlight=labels.map(l=>d[l].highlight);
+    const other=labels.map(l=>d[l].other);
+    return {labels, highlight, other};
+  };
+
+  const barOpts=(title)=>({...chartOpts(), plugins:{title:{display:true,text:title,font:{size:16,weight:'600'}}, legend:{display:false}}});
+
+  // Farben
+  const colHighlight='#004bb5', colOther='#d1d5db';
+
+  // Route
+  let data=makeStackedData(routeCol);
+  chartRoute=new Chart(chartRoute=document.getElementById("chartRoute"),{
+    type:'bar',
+    data:{labels:data.labels,datasets:[
+      {label:'Ausgewählt',data:data.highlight,backgroundColor:colHighlight},
+      {label:'Andere',data:data.other,backgroundColor:colOther}
+    ]},
+    options:{...barOpts(getBWText()+' pro Route'),scales:{x:{stacked:true},y:{stacked:true}}}
+  });
+
+  // RW
+  data=makeStackedData(rwCol);
+  chartRW=new Chart(chartRW=document.getElementById("chartRW"),{
+    type:'bar',
+    data:{labels:data.labels,datasets:[
+      {label:'Ausgewählt',data:data.highlight,backgroundColor:colHighlight},
+      {label:'Andere',data:data.other,backgroundColor:colOther}
+    ]},
+    options:{...barOpts(getBWText()+' pro Piste'),scales:{x:{stacked:true},y:{stacked:true}}}
+  });
+
+  // Ftyp
+  data=makeStackedData(ftypCol);
+  chartFTYP=new Chart(chartFTYP=document.getElementById("chartFTYP"),{
+    type:'bar',
+    data:{labels:data.labels,datasets:[
+      {label:'Ausgewählt',data:data.highlight,backgroundColor:colHighlight},
+      {label:'Andere',data:data.other,backgroundColor:colOther}
+    ]},
+    options:{...barOpts('Flottenmix'),scales:{x:{stacked:true},y:{stacked:true}}}
+  });
+
+  // LK
+  data=makeStackedData(lkCol);
+  chartLK=new Chart(chartLK=document.getElementById("chartLK"),{
+    type:'bar',
+    data:{labels:data.labels,datasets:[
+      {label:'Ausgewählt',data:data.highlight,backgroundColor:colHighlight},
+      {label:'Andere',data:data.other,backgroundColor:colOther}
+    ]},
+    options:{...barOpts('Lärmklasse der Jetflugzeuge'),scales:{x:{stacked:true},y:{stacked:true}}}
+  });
+
+  // Tageszeit-Pie
+  const dn={Tag:0,Nacht:0};
+  rows.forEach(r=>{
+    const h=parseDate(r[dtCol]).getHours();
+    h>=6&&h<22?dn.Tag++:dn.Nacht++;
+  });
+  chartDayNight=new Chart(chartDayNight=document.getElementById("chartDayNight"),{
+    type:'pie',
+    data:{labels:Object.keys(dn),datasets:[{data:Object.values(dn),backgroundColor:['#004bb5','#d1d5db'],hoverOffset:8}]},
+    options:{...chartOpts(),plugins:{title:{display:true,text:'Tageszeit',font:{size:16,weight:'600'}}}}
+  });
 }
 
 function renderTable(rows){
@@ -329,90 +455,13 @@ function renderTable(rows){
   document.getElementById("table-container").replaceChildren(table);
 }
 
-function chartOpts(){
-  return {
-    responsive:true,
-    maintainAspectRatio:false,
-    devicePixelRatio:window.devicePixelRatio||1,
-    animation:false
-  };
-}
-
-function getBWText(){
-  if(bwFilter==="S") return "Abflüge";
-  if(bwFilter==="L") return "Anflüge";
-  return "An-/Abflüge";
-}
-
-function updateCharts(rows){
-  const count=c=>rows.reduce((a,r)=>{
-    const k=r[c]||"Unbekannt"; 
-    a[k]=(a[k]||0)+1; 
-    return a;
-  },{});
-
-  chartRoute?.destroy(); chartRW?.destroy(); chartFTYP?.destroy(); chartLK?.destroy(); chartDayNight?.destroy();
-
-  // Farben anpassen
-  const barColor = '#004bb5';
-  const barHover = '#3366cc';
-  const pieColors = ['#004bb5','#d1d5db']; // Tag/Nacht
-
-  chartRoute = new Chart(chartRoute=document.getElementById("chartRoute"), {
-    type: "bar",
-    data: { 
-      labels: Object.keys(count(routeCol)), 
-      datasets: [{data: Object.values(count(routeCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
-    },
-    options: { ...chartOpts(), plugins:{ title:{ display:true, text:`${getBWText()} pro Route`, font:{size:16,weight:'600'} }, legend: { display:false }} }
-  });
-
-  chartRW = new Chart(chartRW=document.getElementById("chartRW"), {
-    type: "bar",
-    data: { 
-      labels: Object.keys(count(rwCol)), 
-      datasets: [{data: Object.values(count(rwCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
-    },
-    options: { ...chartOpts(), plugins:{ title:{ display:true, text:`${getBWText()} pro Piste`, font:{size:16,weight:'600'} }, legend: { display:false } } }
-  });
-
-  chartFTYP = new Chart(chartFTYP=document.getElementById("chartFTYP"), {
-    type: "bar",
-    data: { 
-      labels: Object.keys(count(ftypCol)), 
-      datasets: [{data: Object.values(count(ftypCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
-    },
-    options: { ...chartOpts(), plugins:{ title:{ display:true, text:"Flottenmix", font:{size:16,weight:'600'} }, legend: { display:false } } }
-  });
-
-  chartLK = new Chart(chartLK=document.getElementById("chartLK"), {
-    type: "bar",
-    data: { 
-      labels: Object.keys(count(lkCol)), 
-      datasets: [{data: Object.values(count(lkCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
-    },
-    options: { ...chartOpts(), plugins:{ title:{ display:true, text:"Lärmklasse der Jetflugzeuge", font:{size:16,weight:'600'} }, legend: { display:false } } }
-  });
-
-  const dn={Tag:0,Nacht:0};
-  rows.forEach(r=>{
-    const h=parseDate(r[dtCol]).getHours();
-    h>=6&&h<22?dn.Tag++:dn.Nacht++;
-  });
-
-  chartDayNight = new Chart(chartDayNight=document.getElementById("chartDayNight"), {
-    type: "pie",
-    data: { labels:Object.keys(dn), datasets:[{data:Object.values(dn), backgroundColor: pieColors, hoverOffset: 8}] },
-    options: { ...chartOpts(), plugins:{ title:{ display:true, text:"Tageszeit", font:{size:16,weight:'600'} } } }
-  });
-}
-
 function applyFilter(){
   let rows=[...allRows];
   if(bwFilter) rows=rows.filter(r=>r[bwCol]===bwFilter);
   if(timeFilter) rows=rows.filter(r=>inTimeRange(r[dtCol],timeFilter));
+  const highlightedRows = rows.filter(r=>highlightByTime(r));
   updateCharts(rows);
-  renderTable(rows);
+  renderTable(highlightedRows);
 }
 
 applyFilter();
@@ -423,7 +472,9 @@ applyFilter();
   <a href="index.html" class="btn">Zurück</a>
 </div>
 
-<div class="impressum">Impressum: Abteilung OVL - Flughafen Zürich</div>
+<div class="impressum">
+  © Abteilung OVL, Flughafen Zürich AG
+</div>
 
 </body>
 </html>
