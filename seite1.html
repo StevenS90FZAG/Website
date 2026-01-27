@@ -188,7 +188,7 @@ const sep = lines[0].includes(";") ? ";" : ",";
 const headers = lines[0].split(sep).map(h=>h.trim());
 const idx = Object.fromEntries(headers.map((h,i)=>[h,i]));
 
-const bwCol=idx.BW, dtCol=idx.DatZeit_UTC, ftypCol=idx.FTYP,
+const bwCol=idx.BW, dtCol=idx.DatZeit_LT, ftypCol=idx.FTYP,
       rwCol=idx.RW, rtCol=idx.RT, lkCol=idx.LK;
 
 /* ===== DATUM ===== */
