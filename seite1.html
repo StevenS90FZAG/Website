@@ -9,49 +9,55 @@
 
 <style>
 :root{
-  --btn-bg:#d1d5db;
-  --btn-hover:#9ca3af;
-  --btn-active:#004bb5;
-  --border:#ddd;
-  --bg-th:#f5f5f7;
-  --bg-row:#fafafa;
+  --primary:#004bb5;
+  --primary-light:#e8f0ff;
+  --bg:#f4f6fa;
+  --card:#ffffff;
+  --border:#dcdfe6;
+  --text:#1f2937;
+  --radius:10px;
+  --shadow:0 4px 12px rgba(0,0,0,.06);
   --container:1400px;
-  --padX:16px;
 }
 
 *{box-sizing:border-box;}
+
 body{
   margin:0;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
 }
 
 /* ================= HEADER ================= */
 header{
+  max-width:var(--container);
+  margin:24px auto;
   padding:20px;
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
   display:grid;
   grid-template-columns:1fr auto;
   grid-template-rows:auto auto auto;
-  gap:12px;
-  align-items:center;
+  gap:16px;
 }
 
-/* Titel */
 .header-title{
   grid-column:1 / -1;
   grid-row:1;
-  font-size:24px;
+  font-size:26px;
   font-weight:600;
 }
 
-/* BW Buttons unter Titel */
-.bw-toggle.bw-row{
+.bw-row{
   grid-column:1 / -1;
   grid-row:2;
   display:flex;
   gap:8px;
+  flex-wrap:wrap;
 }
 
-/* Zeitfilter links unten */
 .time-toggle{
   grid-column:1;
   grid-row:3;
@@ -60,7 +66,6 @@ header{
   flex-wrap:wrap;
 }
 
-/* Charts/Tabelle rechts unten */
 .top-right{
   grid-column:2;
   grid-row:3;
@@ -71,53 +76,82 @@ header{
 
 /* ================= BUTTONS ================= */
 .btn{
-  padding:8px 14px;
-  border:none;
-  background:var(--btn-bg);
-  font-weight:600;
+  padding:8px 16px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:#fff;
   cursor:pointer;
+  font-weight:500;
+  text-decoration:none;
+  display:inline-block;
+  transition: background 0.2s;
 }
-.btn:hover{ background:var(--btn-hover); }
-.btn.active{ background:var(--btn-active); color:#fff; }
+.btn:hover{ background:var(--primary-light); }
+.btn.active{
+  background:var(--primary);
+  color:#fff;
+  border-color:var(--primary);
+}
+
+.custom-date{
+  display:none;
+  gap:8px;
+}
 
 /* ================= VIEWS ================= */
 .view{
   display:none;
   max-width:var(--container);
   margin:0 auto;
-  padding:0 var(--padX);
+  padding:0 16px 24px;
 }
 .view.active{ display:block; }
 
-/* ================= TABLE ================= */
-table{
-  border-collapse:collapse;
-  width:100%;
-  font-size:14px;
+/* ================= CARDS ================= */
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
 }
-th,td{
-  border:1px solid var(--border);
-  padding:6px 8px;
-  white-space:nowrap;
-}
-th{ background:var(--bg-th); }
-tr:nth-child(even){ background:var(--bg-row); }
 
 /* ================= CHARTS ================= */
 .charts-wrap{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
   gap:16px;
 }
-.charts-wrap.second-row{
-  grid-template-columns:1fr 1fr;
-}
 .chart-box{ height:360px; }
-canvas{ width:100%!important; height:100%!important; }
 
-.custom-date{
-  display:none;
-  gap:8px;
+/* ================= TABLE ================= */
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+th, td{
+  padding:8px 10px;
+  border-bottom:1px solid var(--border);
+}
+th{
+  background:#004bb5;   /* Primärfarbe */
+  color:#ffffff;        /* weiße Schrift */
+  text-align:left;
+}
+
+/* ================= FOOTER ================= */
+.footer{
+  text-align:center;
+  margin:30px 0;
+}
+
+/* Impressum unten rechts */
+.impressum {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 12px;
+    color: #555;
 }
 </style>
 </head>
@@ -125,18 +159,14 @@ canvas{ width:100%!important; height:100%!important; }
 <body>
 
 <header>
-  <div class="header-title">
-    Bewegungsstatistik – Flughafen Zürich – 1. Quadrant
-  </div>
+  <div class="header-title">Bewegungsstatistik – Flughafen Zürich – 1. Quadrant</div>
 
-  <!-- BW Buttons unter Titel -->
-  <div class="bw-toggle bw-row">
+  <div class="bw-row">
     <button id="bwStart" class="btn active">Abflug</button>
     <button id="bwLand" class="btn">Anflug</button>
     <button id="bwAll" class="btn">Alle</button>
   </div>
 
-  <!-- Zeitfilter links unten -->
   <div class="time-toggle">
     <button id="btnYesterday" class="btn">Gestern</button>
     <button id="btnToday" class="btn">Heute</button>
@@ -152,33 +182,33 @@ canvas{ width:100%!important; height:100%!important; }
     </div>
   </div>
 
-  <!-- Charts/Tabelle rechts unten -->
   <div class="top-right">
-    <button id="btnCharts" class="btn active">Grafische Darstellung</button>
+    <button id="btnCharts" class="btn active">Grafiken</button>
     <button id="btnTable" class="btn">Tabelle</button>
   </div>
 </header>
 
 <section id="viewCharts" class="view active">
   <div class="charts-wrap">
-    <div class="chart-box"><canvas id="chartRT"></canvas></div>
-    <div class="chart-box"><canvas id="chartDayNight"></canvas></div>
-    <div class="chart-box"><canvas id="chartRW"></canvas></div>
-  </div>
-  <div class="charts-wrap second-row">
-    <div class="chart-box"><canvas id="chartFTYP"></canvas></div>
-    <div class="chart-box"><canvas id="chartLK"></canvas></div>
+    <div class="card chart-box"><canvas id="chartRoute"></canvas></div>
+    <div class="card chart-box"><canvas id="chartDayNight"></canvas></div>
+    <div class="card chart-box"><canvas id="chartRW"></canvas></div>
+    <div class="card chart-box"><canvas id="chartFTYP"></canvas></div>
+    <div class="card chart-box"><canvas id="chartLK"></canvas></div>
   </div>
 </section>
 
 <section id="viewTable" class="view">
-  <div id="table-container"></div>
+  <div class="card" id="table-container"></div>
 </section>
 
 <script>
 (async function(){
 
-/* ===== CSV LADEN ===== */
+Chart.defaults.font.family =
+  'system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+Chart.defaults.color = '#1f2937';
+
 const res = await fetch("Data.csv",{cache:"no-store"});
 const text = await res.text();
 const lines = text.replace(/\r/g,"").trim().split("\n");
@@ -189,9 +219,8 @@ const headers = lines[0].split(sep).map(h=>h.trim());
 const idx = Object.fromEntries(headers.map((h,i)=>[h,i]));
 
 const bwCol=idx.BW, dtCol=idx.DatZeit_LT, ftypCol=idx.FTYP,
-      rwCol=idx.RW, rtCol=idx.RT, lkCol=idx.LK;
+      rwCol=idx.RW, lkCol=idx.LK, routeCol = idx.Route;
 
-/* ===== DATUM ===== */
 function parseDate(v){
   if(!v) return null;
   const [d,t]=v.split(" ");
@@ -200,7 +229,6 @@ function parseDate(v){
   return new Date(yy,mm-1,dd,h,m);
 }
 
-/* ===== DATEN ===== */
 const allRows = lines.slice(1)
   .map(l=>l.split(sep))
   .filter(r=>r[dtCol]);
@@ -208,9 +236,8 @@ const allRows = lines.slice(1)
 let bwFilter="S";
 let timeFilter=null;
 
-let barRT, barRW, barFTYP, barLK, pieDayNight;
+let chartRoute, chartRW, chartFTYP, chartLK, chartDayNight;
 
-/* ===== ZEITFILTER ===== */
 function inTimeRange(v, range){
   const date=parseDate(v);
   if(!date) return false;
@@ -235,7 +262,7 @@ function inTimeRange(v, range){
   }
 }
 
-/* ===== BUTTONS ===== */
+// ===== Buttons =====
 bwStart.onclick=()=>{bwFilter="S";setBW(bwStart)};
 bwLand.onclick =()=>{bwFilter="L";setBW(bwLand)};
 bwAll.onclick  =()=>{bwFilter=null;setBW(bwAll)};
@@ -270,106 +297,116 @@ function setView(charts){
   btnTable.classList.toggle("active",!charts);
 }
 
-/* ===== TABELLE ===== */
 function renderTable(rows){
-  // 1. Nach Datum gruppieren und RW zählen
   const dailyMap = {};
-  const allRWs = Array.from(new Set(rows.map(r => r[rwCol] || "Unbekannt"))).sort();
+  const allRWs = Array.from(new Set(rows.map(r=>r[routeCol]||"Unbekannt"))).sort();
 
-  rows.forEach(r => {
-    const date = parseDate(r[dtCol]);
-    if(!date) return;
-
-    const dayKey = `${String(date.getDate()).padStart(2,"0")}.${String(date.getMonth()+1).padStart(2,"0")}.${date.getFullYear()}`;
-    const rw = r[rwCol] || "Unbekannt";
-
-    if(!dailyMap[dayKey]) dailyMap[dayKey] = {};
-    dailyMap[dayKey][rw] = (dailyMap[dayKey][rw] || 0) + 1;
+  rows.forEach(r=>{
+    const d=parseDate(r[dtCol]);
+    if(!d) return;
+    const key=`${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
+    const rw=r[routeCol]||"Unbekannt";
+    dailyMap[key]??={};
+    dailyMap[key][rw]=(dailyMap[key][rw]||0)+1;
   });
 
-  // Tabelle erstellen
-  const table = document.createElement("table");
+  const table=document.createElement("table");
+  table.innerHTML="<tr><th>Datum</th>"+allRWs.map(rw=>`<th>${rw}</th>`).join("")+"<th>Total</th></tr>";
 
-  // Header
-  const trHead = document.createElement("tr");
-  const thDate = document.createElement("th");
-  thDate.textContent = "Datum";
-  trHead.appendChild(thDate);
-
-  allRWs.forEach(rw => {
-    const th = document.createElement("th");
-    th.textContent = rw;
-    trHead.appendChild(th);
-  });
-
-  const thTotal = document.createElement("th");
-  thTotal.textContent = "Total";
-  trHead.appendChild(thTotal);
-  table.appendChild(trHead);
-
-  // Datenzeilen
-  Object.keys(dailyMap).sort((a,b) => {
-    const da = parseDate(a+" 00:00");
-    const db = parseDate(b+" 00:00");
-    return da - db;
-  }).forEach(day => {
-    const tr = document.createElement("tr");
-    const tdDate = document.createElement("td");
-    tdDate.textContent = day;
-    tr.appendChild(tdDate);
-
-    let rowTotal = 0;
-    allRWs.forEach(rw => {
-      const val = dailyMap[day][rw] || 0;
-      rowTotal += val;
-      const td = document.createElement("td");
-      td.textContent = val;
-      tr.appendChild(td);
+  Object.keys(dailyMap).sort().forEach(day=>{
+    let total=0;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${day}</td>`;
+    allRWs.forEach(rw=>{
+      const v=dailyMap[day][rw]||0;
+      total+=v;
+      tr.innerHTML+=`<td>${v}</td>`;
     });
-
-    const tdTotal = document.createElement("td");
-    tdTotal.textContent = rowTotal;
-    tr.appendChild(tdTotal);
-
+    tr.innerHTML+=`<td>${total}</td>`;
     table.appendChild(tr);
   });
 
-  // Tabelle ins DOM
   document.getElementById("table-container").replaceChildren(table);
 }
 
+function chartOpts(){
+  return {
+    responsive:true,
+    maintainAspectRatio:false,
+    devicePixelRatio:window.devicePixelRatio||1,
+    animation:false
+  };
+}
 
-/* ===== CHARTS ===== */
+function getBWText(){
+  if(bwFilter==="S") return "Abflüge";
+  if(bwFilter==="L") return "Anflüge";
+  return "An-/Abflüge";
+}
+
 function updateCharts(rows){
-  const count = col => rows.reduce((a,r)=>{
-    const k=r[col]||"Unbekannt"; a[k]=(a[k]||0)+1; return a;
+  const count=c=>rows.reduce((a,r)=>{
+    const k=r[c]||"Unbekannt"; 
+    a[k]=(a[k]||0)+1; 
+    return a;
   },{});
 
-  barRT?.destroy();
-  barRW?.destroy();
-  barFTYP?.destroy();
-  barLK?.destroy();
-  pieDayNight?.destroy();
+  chartRoute?.destroy(); chartRW?.destroy(); chartFTYP?.destroy(); chartLK?.destroy(); chartDayNight?.destroy();
 
-  barRT=new Chart(chartRT,{type:"bar",data:{labels:Object.keys(count(rtCol)),datasets:[{data:Object.values(count(rtCol))}]},options:{maintainAspectRatio:false}});
-  barRW=new Chart(chartRW,{type:"bar",data:{labels:Object.keys(count(rwCol)),datasets:[{data:Object.values(count(rwCol))}]},options:{maintainAspectRatio:false}});
-  barFTYP=new Chart(chartFTYP,{type:"bar",data:{labels:Object.keys(count(ftypCol)),datasets:[{data:Object.values(count(ftypCol))}]},options:{maintainAspectRatio:false}});
-  barLK=new Chart(chartLK,{type:"bar",data:{labels:Object.keys(count(lkCol)),datasets:[{data:Object.values(count(lkCol))}]},options:{maintainAspectRatio:false}});
+  // Farben anpassen
+  const barColor = '#004bb5';
+  const barHover = '#3366cc';
+  const pieColors = ['#004bb5','#d1d5db']; // Tag/Nacht
+
+  chartRoute = new Chart(chartRoute=document.getElementById("chartRoute"), {
+    type: "bar",
+    data: { 
+      labels: Object.keys(count(routeCol)), 
+      datasets: [{data: Object.values(count(routeCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
+    },
+    options: { ...chartOpts(), plugins:{ title:{ display:true, text:`${getBWText()} pro Route`, font:{size:16,weight:'600'} }, legend: { display:false }} }
+  });
+
+  chartRW = new Chart(chartRW=document.getElementById("chartRW"), {
+    type: "bar",
+    data: { 
+      labels: Object.keys(count(rwCol)), 
+      datasets: [{data: Object.values(count(rwCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
+    },
+    options: { ...chartOpts(), plugins:{ title:{ display:true, text:`${getBWText()} pro Piste`, font:{size:16,weight:'600'} }, legend: { display:false } } }
+  });
+
+  chartFTYP = new Chart(chartFTYP=document.getElementById("chartFTYP"), {
+    type: "bar",
+    data: { 
+      labels: Object.keys(count(ftypCol)), 
+      datasets: [{data: Object.values(count(ftypCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
+    },
+    options: { ...chartOpts(), plugins:{ title:{ display:true, text:"Flottenmix", font:{size:16,weight:'600'} }, legend: { display:false } } }
+  });
+
+  chartLK = new Chart(chartLK=document.getElementById("chartLK"), {
+    type: "bar",
+    data: { 
+      labels: Object.keys(count(lkCol)), 
+      datasets: [{data: Object.values(count(lkCol)), backgroundColor: barColor, hoverBackgroundColor: barHover}] 
+    },
+    options: { ...chartOpts(), plugins:{ title:{ display:true, text:"Lärmklasse der Jetflugzeuge", font:{size:16,weight:'600'} }, legend: { display:false } } }
+  });
 
   const dn={Tag:0,Nacht:0};
   rows.forEach(r=>{
     const h=parseDate(r[dtCol]).getHours();
-    h>=6&&h<22 ? dn.Tag++ : dn.Nacht++;
+    h>=6&&h<22?dn.Tag++:dn.Nacht++;
   });
 
-  pieDayNight=new Chart(chartDayNight,{
-    type:"pie",
-    data:{labels:Object.keys(dn),datasets:[{data:Object.values(dn)}]},
-    options:{maintainAspectRatio:false}
+  chartDayNight = new Chart(chartDayNight=document.getElementById("chartDayNight"), {
+    type: "pie",
+    data: { labels:Object.keys(dn), datasets:[{data:Object.values(dn), backgroundColor: pieColors, hoverOffset: 8}] },
+    options: { ...chartOpts(), plugins:{ title:{ display:true, text:"Tageszeit", font:{size:16,weight:'600'} } } }
   });
 }
 
-/* ===== FILTER ===== */
 function applyFilter(){
   let rows=[...allRows];
   if(bwFilter) rows=rows.filter(r=>r[bwCol]===bwFilter);
@@ -382,15 +419,11 @@ applyFilter();
 })();
 </script>
 
-<!-- Zurück-Button -->
 <div style="text-align:center; margin:30px 0;">
-  <a href="index.html" class="btn" 
-     style="background:var(--btn-active); color:#fff; text-decoration:none;">
-    Zurück
-  </a>
+  <a href="index.html" class="btn">Zurück</a>
 </div>
 
-
+<div class="impressum">Impressum: Abteilung OVL - Flughafen Zürich</div>
 
 </body>
 </html>

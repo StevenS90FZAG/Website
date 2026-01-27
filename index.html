@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bewegungsstatistik - Flughafen Zürich (Leaflet)</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.5/dist/leaflet.css"
-          integrity="sha256-sA+e2fA+/fclUpI+dCziN9GYYCki7IEEhMc1pJ+X+8g=" crossorigin=""/>
+    <title>Bewegungsstatistik - Flughafen Zürich</title>
+
     <style>
         body {
             margin: 0;
@@ -21,98 +20,93 @@
             font-weight: 600;
         }
 
-        #map {
-            height: 70vh;
-            width: 90%;
-            max-width: 720px;
-            margin: 0 auto;
-            border-radius: 12px;
+        .content {
+            margin-top: 80px;
         }
 
+        /* Image container mit CSS-Variablen für Mittelpunkt */
+        .image-container {
+            --x: 0.568; /* horizontaler Mittelpunkt (0 = links, 1 = rechts) --> ca. Pistenkreuz */ 
+            --y: 0.645; /* vertikaler Mittelpunkt (0 = oben, 1 = unten) --> ca. Pistenkreuz */
+            position: relative;
+            display: inline-block;
+            max-width: 720px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Quadrant links mit verschiebbarem Mittelpunkt */
+        .quadrant {
+            position: absolute;
+            text-decoration: none;
+        }
+
+        /* Positionierung und Größe abhängig von --x und --y */
+        .q1 {
+            top: 0;
+            left: 0;
+            width: calc(var(--x) * 100%);
+            height: calc(var(--y) * 100%);
+        }
+        .q2 {
+            top: 0;
+            left: calc(var(--x) * 100%);
+            width: calc((1 - var(--x)) * 100%);
+            height: calc(var(--y) * 100%);
+        }
+        .q3 {
+            top: calc(var(--y) * 100%);
+            left: 0;
+            width: calc(var(--x) * 100%);
+            height: calc((1 - var(--y)) * 100%);
+        }
+        .q4 {
+            top: calc(var(--y) * 100%);
+            left: calc(var(--x) * 100%);
+            width: calc((1 - var(--x)) * 100%);
+            height: calc((1 - var(--y)) * 100%);
+        }
+
+        /* Optionaler Hover-Effekt */
+        .quadrant:hover {
+            background-color: rgba(0, 113, 227, 0.12);
+        }
+
+        /* Impressum unten rechts */
         .impressum {
-            margin-top: 10px;
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
             font-size: 12px;
             color: #555;
         }
     </style>
 </head>
+
 <body>
     <header>Bewegungsstatistik - Flughafen Zürich</header>
-    <h1>Wo wohnen Sie?</h1>
-    <p>Klicken Sie auf Ihre Umgebung um den Flughafen Zürich.</p>
 
-    <div id="map"></div>
+    <div class="content">
+        <h1>Wo wohnen Sie?</h1>
+        <p>Klicken Sie auf Ihre Umgebung um den Flughafen Zürich.</p>
+
+        <div class="image-container">
+            <img src="ZRH_1.PNG" alt="Bewegungsübersicht">
+
+            <a href="seite1.html" class="quadrant q1" aria-label="Seite 1"></a>
+            <a href="seite2.html" class="quadrant q2" aria-label="Seite 2"></a>
+            <a href="seite3.html" class="quadrant q3" aria-label="Seite 3"></a>
+            <a href="seite4.html" class="quadrant q4" aria-label="Seite 4"></a>
+        </div>
+    </div>
+
     <div class="impressum">Impressum: Abteilung OVL - Flughafen Zürich</div>
-
-    <script src="https://unpkg.com/leaflet@1.9.5/dist/leaflet.js"
-            integrity="sha256-o9N1j7kL0p+2Xk6UJzWcCx7eFj0N0nS1XKqLM0/9+7M=" crossorigin=""></script>
-    <script>
-        // Karte initialisieren (ZRH)
-        const map = L.map('map').setView([47.4506, 8.561], 13);
-
-        // OpenStreetMap Layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        // Vier Quadranten als Polygon (ungefähr aufteilen)
-        const bounds = map.getBounds(); // nicht nötig, wir definieren fix
-
-        // Koordinaten für Quadranten (Beispiel um ZRH)
-        const quadrants = [
-            {
-                name: 'Seite 1',
-                coords: [
-                    [47.455, 8.555], // NW
-                    [47.455, 8.565], // NE
-                    [47.445, 8.565], // SE
-                    [47.445, 8.555]  // SW
-                ],
-                url: 'seite1.html',
-                color: 'rgba(0, 113, 227, 0.2)'
-            },
-            {
-                name: 'Seite 2',
-                coords: [
-                    [47.455, 8.565],
-                    [47.455, 8.575],
-                    [47.445, 8.575],
-                    [47.445, 8.565]
-                ],
-                url: 'seite2.html',
-                color: 'rgba(227, 113, 0, 0.2)'
-            },
-            {
-                name: 'Seite 3',
-                coords: [
-                    [47.445, 8.555],
-                    [47.445, 8.565],
-                    [47.435, 8.565],
-                    [47.435, 8.555]
-                ],
-                url: 'seite3.html',
-                color: 'rgba(0, 227, 113, 0.2)'
-            },
-            {
-                name: 'Seite 4',
-                coords: [
-                    [47.445, 8.565],
-                    [47.445, 8.575],
-                    [47.435, 8.575],
-                    [47.435, 8.565]
-                ],
-                url: 'seite4.html',
-                color: 'rgba(227, 0, 113, 0.2)'
-            }
-        ];
-
-        quadrants.forEach(q => {
-            const polygon = L.polygon(q.coords, {color: q.color, fillOpacity: 0.4}).addTo(map);
-            polygon.on('click', () => {
-                window.location.href = q.url;
-            });
-            polygon.bindTooltip(q.name);
-        });
-    </script>
 </body>
 </html>
