@@ -1,112 +1,265 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bewegungsstatistik - Flughafen Zürich</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bewegungsstatistik – Flughafen Zürich</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #fff;
-            color: #000;
-            text-align: center;
-        }
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        header {
-            padding: 20px;
-            font-size: 24px;
-            font-weight: 600;
-        }
+<style>
+:root{
+  --primary:#004bb5;
+  --primary-light:#e8f0ff;
+  --bg:#f4f6fa;
+  --card:#ffffff;
+  --border:#dcdfe6;
+  --text:#1f2937;
+  --radius:10px;
+  --shadow:0 4px 12px rgba(0,0,0,.06);
+  --container:1400px;
+}
 
-        .content {
-            margin-top: 80px;
-        }
+*{ box-sizing:border-box; }
 
-        /* Image container mit CSS-Variablen für Mittelpunkt */
-        .image-container {
-            --x: 0.568; /* horizontaler Mittelpunkt (0 = links, 1 = rechts) --> ca. Pistenkreuz */ 
-            --y: 0.645; /* vertikaler Mittelpunkt (0 = oben, 1 = unten) --> ca. Pistenkreuz */
-            position: relative;
-            display: inline-block;
-            max-width: 720px;
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-        }
+html, body{
+  height:100%;
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
 
-        .image-container img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
+/* ================= MAP ================= */
+#map{
+  position:fixed;
+  inset:0;
+  z-index:1;
+}
 
-        /* Quadrant links mit verschiebbarem Mittelpunkt */
-        .quadrant {
-            position: absolute;
-            text-decoration: none;
-        }
+/* ================= HEADER ================= */
+header{
+  position:fixed;
+  top:24px;
+  left:50%;
+  transform:translateX(-50%);
+  width:calc(100% - 48px);
+  max-width:var(--container);
+  padding:20px 24px;
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  z-index:1000;
+}
 
-        /* Positionierung und Größe abhängig von --x und --y */
-        .q1 {
-            top: 0;
-            left: 0;
-            width: calc(var(--x) * 100%);
-            height: calc(var(--y) * 100%);
-        }
-        .q2 {
-            top: 0;
-            left: calc(var(--x) * 100%);
-            width: calc((1 - var(--x)) * 100%);
-            height: calc(var(--y) * 100%);
-        }
-        .q3 {
-            top: calc(var(--y) * 100%);
-            left: 0;
-            width: calc(var(--x) * 100%);
-            height: calc((1 - var(--y)) * 100%);
-        }
-        .q4 {
-            top: calc(var(--y) * 100%);
-            left: calc(var(--x) * 100%);
-            width: calc((1 - var(--x)) * 100%);
-            height: calc((1 - var(--y)) * 100%);
-        }
+.header-title{
+  font-size:26px;
+  font-weight:600;
+  margin-bottom:4px;
+}
 
-        /* Optionaler Hover-Effekt */
-        .quadrant:hover {
-            background-color: rgba(0, 113, 227, 0.12);
-        }
+.header-subtitle{
+  font-size:14px;
+  color:#4b5563;
+  margin-bottom:12px;
+}
 
-        /* Impressum unten rechts */
-        .impressum {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            font-size: 12px;
-            color: #555;
-        }
-    </style>
+/* ================= INPUT ================= */
+.address-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.address-row input{
+  flex:1;
+  min-width:260px;
+  padding:10px 12px;
+  font-size:14px;
+  border-radius:6px;
+  border:1px solid var(--border);
+}
+
+.address-row button{
+  padding:10px 16px;
+  font-size:14px;
+  font-weight:500;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:#fff;
+  cursor:pointer;
+}
+
+.address-row button:hover{
+  background:var(--primary-light);
+}
+
+/* ================= IMPRESSUM ================= */
+.impressum{
+  position: fixed;
+  bottom: 10px;
+  left: 10px;      /* statt right:10px */
+  font-size: 12px;
+  color: #555;
+  background: var(--card);
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  z-index: 1000;
+}
+</style>
 </head>
 
 <body>
-    <header>Bewegungsstatistik - Flughafen Zürich</header>
 
-    <div class="content">
-        <h1>Wo wohnen Sie?</h1>
-        <p>Klicken Sie auf Ihre Umgebung um den Flughafen Zürich.</p>
+<div id="map"></div>
 
-        <div class="image-container">
-            <img src="ZRH_1.PNG" alt="Bewegungsübersicht">
+<header>
+  <div class="header-title">Bewegungsstatistik – Flughafen Zürich</div>
+  <div class="header-subtitle">
+    Geben Sie Ihre Adresse ein oder klicken Sie auf Ihre Region rund um den Flughafen.
+  </div>
 
-            <a href="seite1.html" class="quadrant q1" aria-label="Seite 1"></a>
-            <a href="seite2.html" class="quadrant q2" aria-label="Seite 2"></a>
-            <a href="seite3.html" class="quadrant q3" aria-label="Seite 3"></a>
-            <a href="seite4.html" class="quadrant q4" aria-label="Seite 4"></a>
-        </div>
-    </div>
+  <div class="address-row">
+    <input
+      id="addressInput"
+      type="text"
+      placeholder="Adresse eingeben (z. B. Musterstrasse 10, 8000 Zürich)"
+    >
+    <button id="searchBtn">Adresse anzeigen</button>
+  </div>
+</header>
 
-    <div class="impressum">© Abteilung OVL, Flughafen Zürich AG</div>
+<div class="impressum">© Abteilung OVL, Flughafen Zürich AG</div>
+
+<script>
+/* ================= MAP INIT ================= */
+
+const center = [47.458, 8.555];
+
+const map = L.map('map', {
+  center: center,
+  zoom: 11
+});
+
+/* Hintergrund – 40 % transparent */
+const baseLayer = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution: '© OpenStreetMap', opacity: 0.4 }
+).addTo(map);
+
+/* WMS – 40 % transparent */
+const wmsLayer = L.tileLayer.wms(
+  'https://wms.geo.admin.ch/',
+  {
+    layers: 'ch.swisstopo.pixelkarte-farbe',
+    format: 'image/png',
+    transparent: false,
+    opacity: 0.4,
+    attribution: '© swisstopo'
+  }
+).addTo(map);
+
+/* ================= QUADRANTEN ================= */
+
+const bounds = {
+  north: 47.60,
+  south: 47.32,
+  west: 8.30,
+  east: 8.80
+};
+
+const quadrantStyles = {
+  nw: { color:'#003a8f', fillColor:'#004bb5' },
+  ne: { color:'#005fd1', fillColor:'#2f6fff' },
+  sw: { color:'#006bb3', fillColor:'#5b8dff' },
+  se: { color:'#004bb5', fillColor:'#89aaff' }
+};
+
+function addArea(rectBounds, style, url){
+  const area = L.rectangle(rectBounds, {
+    ...style,
+    weight:2,
+    fillOpacity:0.18,
+    dashArray:'4,4'
+  }).addTo(map);
+
+  area.on('mouseover', () => {
+    area.setStyle({ fillOpacity:0.32, dashArray:null });
+    map.getContainer().style.cursor = 'pointer';
+  });
+
+  area.on('mouseout', () => {
+    area.setStyle({ fillOpacity:0.18, dashArray:'4,4' });
+    map.getContainer().style.cursor = '';
+  });
+
+  area.on('click', () => window.location.href = url);
+}
+
+/* Quadranten */
+addArea([[center[0], bounds.west], [bounds.north, center[1]]], quadrantStyles.nw, 'seite1.html');
+addArea([[center[0], center[1]], [bounds.north, bounds.east]], quadrantStyles.ne, 'seite2.html');
+addArea([[bounds.south, bounds.west], [center[0], center[1]]], quadrantStyles.sw, 'seite3.html');
+addArea([[bounds.south, center[1]], [center[0], bounds.east]], quadrantStyles.se, 'seite4.html');
+
+/* ================= ADRESS-SUCHE ================= */
+
+let addressMarker = null;
+
+async function geocodeAddress(address){
+  const url =
+    'https://nominatim.openstreetmap.org/search?' +
+    new URLSearchParams({
+      q: address,
+      format: 'json',
+      limit: 1,
+      countrycodes: 'ch'
+    });
+
+  const response = await fetch(url, {
+    headers: { 'Accept':'application/json' }
+  });
+
+  const data = await response.json();
+  return data.length ? data[0] : null;
+}
+
+async function handleSearch(){
+  const address = document.getElementById('addressInput').value.trim();
+  if (!address) return;
+
+  const result = await geocodeAddress(address);
+
+  if (!result){
+    alert('Adresse nicht gefunden.');
+    return;
+  }
+
+  const lat = parseFloat(result.lat);
+  const lon = parseFloat(result.lon);
+
+  if (addressMarker){
+    map.removeLayer(addressMarker);
+  }
+
+  addressMarker = L.marker([lat, lon], { riseOnHover:true })
+    .addTo(map)
+    .bindPopup(`<strong>${result.display_name}</strong>`)
+    .openPopup();
+
+  map.setView([lat, lon], 14);
+}
+
+document.getElementById('searchBtn').addEventListener('click', handleSearch);
+
+document.getElementById('addressInput')
+  .addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleSearch();
+  });
+</script>
+
 </body>
 </html>
