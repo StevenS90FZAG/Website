@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bewegungsstatistik – Flughafen Zürich</title>
 
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -66,24 +65,43 @@ header{
   margin-bottom:12px;
 }
 
-/* ================= INPUT ================= */
+/* ================= HEADER ACTIONS (OBEN RECHTS) ================= */
+.header-actions{
+  position:absolute;
+  top:16px;
+  right:20px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  align-items:flex-end;
+}
+
+/* ================= INPUT + BUTTONS ================= */
 .address-row{
   display:flex;
   gap:8px;
   flex-wrap:wrap;
+  margin-bottom:4px;
+  align-items:center;
+}
+
+.address-wrapper{
+  position:relative;
+  flex:1;
+  min-width:260px;
 }
 
 .address-row input{
-  flex:1;
-  min-width:260px;
+  width:100%;
   padding:10px 12px;
   font-size:14px;
   border-radius:6px;
   border:1px solid var(--border);
 }
 
-.address-row button{
-  padding:10px 16px;
+.address-row button,
+.reset-btn{
+  padding:8px 14px;
   font-size:14px;
   font-weight:500;
   border-radius:6px;
@@ -92,22 +110,99 @@ header{
   cursor:pointer;
 }
 
-.address-row button:hover{
+.address-row button:hover,
+.reset-btn:hover{
   background:var(--primary-light);
+}
+
+/* ================= AUTOCOMPLETE ================= */
+#suggestions{
+  position:absolute;
+  top:100%;
+  left:0;
+  right:0;
+  background:#fff;
+  border:1px solid var(--border);
+  border-top:none;
+  max-height:220px;
+  overflow-y:auto;
+  list-style:none;
+  margin:0;
+  padding:0;
+  z-index:2000;
+}
+
+#suggestions li{
+  padding:8px 12px;
+  cursor:pointer;
+  font-size:14px;
+}
+
+#suggestions li:hover{
+  background:var(--primary-light);
+}
+
+/* ================= TOGGLE SWITCH ================= */
+.toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  background:var(--primary-light);
+  border-radius:999px;
+  font-size:14px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.toggle input{ display:none; }
+
+.toggle-slider{
+  position:relative;
+  width:36px;
+  height:18px;
+  background:#cbd5e1;
+  border-radius:999px;
+  transition:.25s;
+}
+
+.toggle-slider::before{
+  content:"";
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:14px;
+  height:14px;
+  background:#fff;
+  border-radius:50%;
+  transition:.25s;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+
+.toggle input:checked + .toggle-slider{
+  background:var(--primary);
+}
+
+.toggle input:checked + .toggle-slider::before{
+  transform:translateX(18px);
 }
 
 /* ================= IMPRESSUM ================= */
 .impressum{
-  position: fixed;
-  bottom: 10px;
-  left: 10px;      /* statt right:10px */
-  font-size: 12px;
-  color: #555;
-  background: var(--card);
-  padding: 6px 10px;
-  border-radius: 6px;
-  box-shadow: var(--shadow);
-  z-index: 1000;
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:12px;
+  background:var(--card);
+  padding:6px 10px;
+  border-radius:6px;
+  box-shadow:var(--shadow);
+  z-index:1000;
+}
+
+/* ================= ZOOM OFFSET ================= */
+.leaflet-bottom.leaflet-left .leaflet-control-zoom{
+  margin-bottom:60px;
 }
 </style>
 </head>
@@ -122,13 +217,25 @@ header{
     Geben Sie Ihre Adresse ein oder klicken Sie auf Ihre Region rund um den Flughafen.
   </div>
 
+  <!-- Adresse + Buttons -->
   <div class="address-row">
-    <input
-      id="addressInput"
-      type="text"
-      placeholder="Adresse eingeben (z. B. Musterstrasse 10, 8000 Zürich)"
-    >
+    <div class="address-wrapper">
+      <input id="addressInput"
+             placeholder="Adresse eingeben (z. B. Musterstrasse 10, 8000 Zürich)"
+             autocomplete="off">
+      <ul id="suggestions"></ul>
+    </div>
     <button id="searchBtn">Adresse anzeigen</button>
+    <button class="reset-btn" id="resetViewBtn">Zum Flughafen</button>
+  </div>
+
+  <!-- Pisten Toggle oben rechts -->
+  <div class="header-actions">
+    <label class="toggle">
+      <input type="checkbox" id="togglePiste">
+      <span class="toggle-slider"></span>
+      <span>Pisten</span>
+    </label>
   </div>
 </header>
 
@@ -136,129 +243,114 @@ header{
 
 <script>
 /* ================= MAP INIT ================= */
-
-const center = [47.458, 8.555];
+const airportCenter = [47.458, 8.555];
+const airportZoom = 11;
 
 const map = L.map('map', {
-  center: center,
-  zoom: 11
+  center: airportCenter,
+  zoom: airportZoom,
+  zoomControl:false
 });
 
-/* Hintergrund – 40 % transparent */
-const baseLayer = L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { attribution: '© OpenStreetMap', opacity: 0.4 }
-).addTo(map);
+L.control.zoom({ position:'bottomleft' }).addTo(map);
 
-/* WMS – 40 % transparent */
-const wmsLayer = L.tileLayer.wms(
-  'https://wms.geo.admin.ch/',
-  {
-    layers: 'ch.swisstopo.pixelkarte-farbe',
-    format: 'image/png',
-    transparent: false,
-    opacity: 0.4,
-    attribution: '© swisstopo'
-  }
-).addTo(map);
+L.tileLayer.wms('https://wms.geo.admin.ch/', {
+  layers:'ch.swisstopo.pixelkarte-farbe',
+  opacity:0.4,
+  attribution:'© swisstopo'
+}).addTo(map);
+
+/* ================= RESET VIEW ================= */
+document.getElementById('resetViewBtn')
+  .addEventListener('click', () => {
+    map.setView(airportCenter, airportZoom);
+  });
 
 /* ================= QUADRANTEN ================= */
+const bounds = { north:47.60, south:47.32, west:8.30, east:8.80 };
 
-const bounds = {
-  north: 47.60,
-  south: 47.32,
-  west: 8.30,
-  east: 8.80
+const styles = {
+  nw:{ color:'#003a8f', fillColor:'#004bb5' },
+  ne:{ color:'#005fd1', fillColor:'#2f6fff' },
+  sw:{ color:'#006bb3', fillColor:'#5b8dff' },
+  se:{ color:'#004bb5', fillColor:'#89aaff' }
 };
 
-const quadrantStyles = {
-  nw: { color:'#003a8f', fillColor:'#004bb5' },
-  ne: { color:'#005fd1', fillColor:'#2f6fff' },
-  sw: { color:'#006bb3', fillColor:'#5b8dff' },
-  se: { color:'#004bb5', fillColor:'#89aaff' }
-};
-
-function addArea(rectBounds, style, url){
-  const area = L.rectangle(rectBounds, {
-    ...style,
-    weight:2,
-    fillOpacity:0.18,
-    dashArray:'4,4'
-  }).addTo(map);
-
-  area.on('mouseover', () => {
-    area.setStyle({ fillOpacity:0.32, dashArray:null });
-    map.getContainer().style.cursor = 'pointer';
-  });
-
-  area.on('mouseout', () => {
-    area.setStyle({ fillOpacity:0.18, dashArray:'4,4' });
-    map.getContainer().style.cursor = '';
-  });
-
-  area.on('click', () => window.location.href = url);
+function addQuadrant(b, style, url){
+  const r=L.rectangle(b,{...style,weight:2,fillOpacity:.18,dashArray:'4,4'}).addTo(map);
+  r.on('mouseover',()=>r.setStyle({fillOpacity:.32,dashArray:null}));
+  r.on('mouseout',()=>r.setStyle({fillOpacity:.18,dashArray:'4,4'}));
+  r.on('click',()=>window.location.href=url);
 }
 
-/* Quadranten */
-addArea([[center[0], bounds.west], [bounds.north, center[1]]], quadrantStyles.nw, 'seite1.html');
-addArea([[center[0], center[1]], [bounds.north, bounds.east]], quadrantStyles.ne, 'seite2.html');
-addArea([[bounds.south, bounds.west], [center[0], center[1]]], quadrantStyles.sw, 'seite3.html');
-addArea([[bounds.south, center[1]], [center[0], bounds.east]], quadrantStyles.se, 'seite4.html');
+addQuadrant([[airportCenter[0],bounds.west],[bounds.north,airportCenter[1]]],styles.nw,'seite1.html');
+addQuadrant([[airportCenter[0],airportCenter[1]],[bounds.north,bounds.east]],styles.ne,'seite2.html');
+addQuadrant([[bounds.south,bounds.west],[airportCenter[0],airportCenter[1]]],styles.sw,'seite3.html');
+addQuadrant([[bounds.south,airportCenter[1]],[airportCenter[0],bounds.east]],styles.se,'seite4.html');
 
-/* ================= ADRESS-SUCHE ================= */
+/* ================= PISTEN ================= */
+let pisteLayer=null;
 
-let addressMarker = null;
-
-async function geocodeAddress(address){
-  const url =
-    'https://nominatim.openstreetmap.org/search?' +
-    new URLSearchParams({
-      q: address,
-      format: 'json',
-      limit: 1,
-      countrycodes: 'ch'
+fetch('ZRH_Pisten.geojson')
+  .then(r=>r.json())
+  .then(g=>{
+    pisteLayer=L.geoJSON(g,{
+      style:{ color:'#d90429', weight:3 }
     });
-
-  const response = await fetch(url, {
-    headers: { 'Accept':'application/json' }
   });
 
-  const data = await response.json();
-  return data.length ? data[0] : null;
-}
-
-async function handleSearch(){
-  const address = document.getElementById('addressInput').value.trim();
-  if (!address) return;
-
-  const result = await geocodeAddress(address);
-
-  if (!result){
-    alert('Adresse nicht gefunden.');
-    return;
-  }
-
-  const lat = parseFloat(result.lat);
-  const lon = parseFloat(result.lon);
-
-  if (addressMarker){
-    map.removeLayer(addressMarker);
-  }
-
-  addressMarker = L.marker([lat, lon], { riseOnHover:true })
-    .addTo(map)
-    .bindPopup(`<strong>${result.display_name}</strong>`)
-    .openPopup();
-
-  map.setView([lat, lon], 14);
-}
-
-document.getElementById('searchBtn').addEventListener('click', handleSearch);
-
-document.getElementById('addressInput')
-  .addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleSearch();
+document.getElementById('togglePiste')
+  .addEventListener('change',e=>{
+    if(!pisteLayer) return;
+    e.target.checked ? pisteLayer.addTo(map) : map.removeLayer(pisteLayer);
   });
+
+/* ================= AUTOCOMPLETE ================= */
+const input=document.getElementById('addressInput');
+const suggestions=document.getElementById('suggestions');
+let marker=null, timer=null;
+
+async function search(q){
+  const r=await fetch(
+    'https://nominatim.openstreetmap.org/search?' +
+    new URLSearchParams({ q, format:'json', limit:5, countrycodes:'ch' })
+  );
+  return r.json();
+}
+
+function show(item){
+  suggestions.innerHTML='';
+  input.value=item.display_name;
+  if(marker) map.removeLayer(marker);
+  marker=L.marker([+item.lat,+item.lon]).addTo(map)
+    .bindPopup(item.display_name).openPopup();
+  map.setView([+item.lat,+item.lon],14);
+}
+
+input.addEventListener('input',()=>{
+  clearTimeout(timer);
+  if(input.value.length<3){ suggestions.innerHTML=''; return; }
+  timer=setTimeout(async()=>{
+    const data=await search(input.value);
+    suggestions.innerHTML='';
+    data.forEach(i=>{
+      const li=document.createElement('li');
+      li.textContent=i.display_name;
+      li.onclick=()=>show(i);
+      suggestions.appendChild(li);
+    });
+  },300);
+});
+
+document.getElementById('searchBtn')
+  .addEventListener('click',async()=>{
+    const d=await search(input.value);
+    if(d.length) show(d[0]);
+  });
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.address-wrapper')) suggestions.innerHTML='';
+});
 </script>
 
 </body>

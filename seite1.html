@@ -437,25 +437,32 @@ function renderTable(rows){
     if(!d) return;
     const key=`${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
     const rw=r[routeCol]||"Unbekannt";
-    dailyMap[key]??={};
-    dailyMap[key][rw]=(dailyMap[key][rw]||0)+1;
+    dailyMap[key] ??= {};
+    dailyMap[key][rw] = (dailyMap[key][rw]||0) + 1;
   });
 
   const table=document.createElement("table");
   table.innerHTML="<tr><th>Datum</th>"+allRWs.map(rw=>`<th>${rw}</th>`).join("")+"<th>Total</th></tr>";
 
-  Object.keys(dailyMap).sort().forEach(day=>{
-    let total=0;
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${day}</td>`;
-    allRWs.forEach(rw=>{
-      const v=dailyMap[day][rw]||0;
-      total+=v;
-      tr.innerHTML+=`<td>${v}</td>`;
+  // Sortierung nach echtem Datum
+  Object.keys(dailyMap)
+    .map(k=>{
+      const [dd,mm,yyyy] = k.split(".").map(Number);
+      return { key: k, date: new Date(yyyy, mm-1, dd) };
+    })
+    .sort((a,b) => a.date - b.date) // aufsteigend
+    .forEach(({key})=>{
+      let total=0;
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${key}</td>`;
+      allRWs.forEach(rw=>{
+        const v=dailyMap[key][rw]||0;
+        total+=v;
+        tr.innerHTML+=`<td>${v}</td>`;
+      });
+      tr.innerHTML+=`<td>${total}</td>`;
+      table.appendChild(tr);
     });
-    tr.innerHTML+=`<td>${total}</td>`;
-    table.appendChild(tr);
-  });
 
   document.getElementById("table-container").replaceChildren(table);
 }
