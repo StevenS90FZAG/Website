@@ -31,14 +31,14 @@ html, body{
   color:var(--text);
 }
 
-/* ================= MAP ================= */
+/* MAP */
 #map{
   position:fixed;
   inset:0;
   z-index:1;
 }
 
-/* ================= HEADER ================= */
+/* HEADER */
 header{
   position:fixed;
   top:24px;
@@ -65,7 +65,7 @@ header{
   margin-bottom:12px;
 }
 
-/* ================= HEADER ACTIONS (OBEN RECHTS) ================= */
+/* HEADER ACTIONS */
 .header-actions{
   position:absolute;
   top:16px;
@@ -76,7 +76,12 @@ header{
   align-items:flex-end;
 }
 
-/* ================= INPUT + BUTTONS ================= */
+.toggle-row{
+  display:flex;
+  gap:6px;
+}
+
+/* INPUTS */
 .address-row{
   display:flex;
   gap:8px;
@@ -115,7 +120,7 @@ header{
   background:var(--primary-light);
 }
 
-/* ================= AUTOCOMPLETE ================= */
+/* AUTOCOMPLETE */
 #suggestions{
   position:absolute;
   top:100%;
@@ -142,7 +147,7 @@ header{
   background:var(--primary-light);
 }
 
-/* ================= TOGGLE SWITCH ================= */
+/* TOGGLE */
 .toggle{
   display:inline-flex;
   align-items:center;
@@ -176,7 +181,6 @@ header{
   background:#fff;
   border-radius:50%;
   transition:.25s;
-  box-shadow:0 1px 3px rgba(0,0,0,.25);
 }
 
 .toggle input:checked + .toggle-slider{
@@ -187,7 +191,29 @@ header{
   transform:translateX(18px);
 }
 
-/* ================= IMPRESSUM ================= */
+/* LABELS */
+.gemeinde-label{
+  background:rgba(255,255,255,0.9);
+  border:1px solid #004bb5;
+  color:#003a8f;
+  font-weight:600;
+  padding:4px 8px;
+  border-radius:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+  font-size:12px;
+}
+
+/* Quadranten nur Buchstaben */
+.quadrant-label{
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: #003a8f;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* IMPRESSUM */
 .impressum{
   position:fixed;
   bottom:10px;
@@ -200,7 +226,7 @@ header{
   z-index:1000;
 }
 
-/* ================= ZOOM OFFSET ================= */
+/* ZOOM OFFSET */
 .leaflet-bottom.leaflet-left .leaflet-control-zoom{
   margin-bottom:60px;
 }
@@ -217,25 +243,40 @@ header{
     Geben Sie Ihre Adresse ein oder klicken Sie auf Ihre Region rund um den Flughafen.
   </div>
 
-  <!-- Adresse + Buttons -->
   <div class="address-row">
     <div class="address-wrapper">
-      <input id="addressInput"
-             placeholder="Adresse eingeben (z. B. Musterstrasse 10, 8000 Zürich)"
-             autocomplete="off">
+      <input id="addressInput" placeholder="Adresse eingeben" autocomplete="off">
       <ul id="suggestions"></ul>
     </div>
     <button id="searchBtn">Adresse anzeigen</button>
     <button class="reset-btn" id="resetViewBtn">Zum Flughafen</button>
   </div>
 
-  <!-- Pisten Toggle oben rechts -->
+  <!-- Switcher -->
   <div class="header-actions">
-    <label class="toggle">
-      <input type="checkbox" id="togglePiste">
-      <span class="toggle-slider"></span>
-      <span>Pisten</span>
-    </label>
+    <!-- Zeile 1: Pisten + Routen -->
+    <div class="toggle-row">
+      <label class="toggle">
+        <input type="checkbox" id="togglePiste">
+        <span class="toggle-slider"></span>
+        <span>Pisten</span>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" id="toggleRouten">
+        <span class="toggle-slider"></span>
+        <span>Routen</span>
+      </label>
+    </div>
+
+    <!-- Zeile 2: Gemeinden -->
+    <div class="toggle-row">
+      <label class="toggle">
+        <input type="checkbox" id="toggleGemeinden">
+        <span class="toggle-slider"></span>
+        <span>Gemeinden</span>
+      </label>
+    </div>
   </div>
 </header>
 
@@ -246,12 +287,7 @@ header{
 const airportCenter = [47.458, 8.555];
 const airportZoom = 11;
 
-const map = L.map('map', {
-  center: airportCenter,
-  zoom: airportZoom,
-  zoomControl:false
-});
-
+const map = L.map('map', { center: airportCenter, zoom: airportZoom, zoomControl:false });
 L.control.zoom({ position:'bottomleft' }).addTo(map);
 
 L.tileLayer.wms('https://wms.geo.admin.ch/', {
@@ -260,15 +296,12 @@ L.tileLayer.wms('https://wms.geo.admin.ch/', {
   attribution:'© swisstopo'
 }).addTo(map);
 
-/* ================= RESET VIEW ================= */
+/* ================= RESET ================= */
 document.getElementById('resetViewBtn')
-  .addEventListener('click', () => {
-    map.setView(airportCenter, airportZoom);
-  });
+  .addEventListener('click', () => { map.setView(airportCenter, airportZoom); });
 
 /* ================= QUADRANTEN ================= */
 const bounds = { north:47.60, south:47.32, west:8.30, east:8.80 };
-
 const styles = {
   nw:{ color:'#003a8f', fillColor:'#004bb5' },
   ne:{ color:'#005fd1', fillColor:'#2f6fff' },
@@ -276,34 +309,77 @@ const styles = {
   se:{ color:'#004bb5', fillColor:'#89aaff' }
 };
 
-function addQuadrant(b, style, url){
-  const r=L.rectangle(b,{...style,weight:2,fillOpacity:.18,dashArray:'4,4'}).addTo(map);
-  r.on('mouseover',()=>r.setStyle({fillOpacity:.32,dashArray:null}));
-  r.on('mouseout',()=>r.setStyle({fillOpacity:.18,dashArray:'4,4'}));
+const quadrantLayer = L.layerGroup().addTo(map);
+
+function addQuadrant(b, style, url, label){
+  const r = L.rectangle(b,{ ...style, weight:2, fillOpacity:.18, dashArray:'4,4' });
+  r.on('mouseover',()=>r.setStyle({ fillOpacity:.32, dashArray:null }));
+  r.on('mouseout',()=>r.setStyle({ fillOpacity:.18, dashArray:'4,4' }));
   r.on('click',()=>window.location.href=url);
+
+  // Tooltip direkt am Rechteck, nur Buchstaben
+  r.bindTooltip(label, {
+    permanent: true,
+    direction: 'center',
+    className: 'quadrant-label'
+  });
+
+  quadrantLayer.addLayer(r);
 }
 
-addQuadrant([[airportCenter[0],bounds.west],[bounds.north,airportCenter[1]]],styles.nw,'seite1.html');
-addQuadrant([[airportCenter[0],airportCenter[1]],[bounds.north,bounds.east]],styles.ne,'seite2.html');
-addQuadrant([[bounds.south,bounds.west],[airportCenter[0],airportCenter[1]]],styles.sw,'seite3.html');
-addQuadrant([[bounds.south,airportCenter[1]],[airportCenter[0],bounds.east]],styles.se,'seite4.html');
+addQuadrant([[airportCenter[0],bounds.west],[bounds.north,airportCenter[1]]],styles.nw,'seite1.html','NW');
+addQuadrant([[airportCenter[0],airportCenter[1]],[bounds.north,bounds.east]],styles.ne,'seite2.html','NE');
+addQuadrant([[bounds.south,bounds.west],[airportCenter[0],airportCenter[1]]],styles.sw,'seite3.html','SW');
+addQuadrant([[bounds.south,airportCenter[1]],[airportCenter[0],bounds.east]],styles.se,'seite4.html','SE');
+
+/* ================= GEMEINDEN ================= */
+let gemeindenLayer = null;
+let selectedGemeinde = null;
+const gemeindeStyle = { color:'#004bb5', weight:2, fillColor:'#5b8dff', fillOpacity:.18, dashArray:'4,4' };
+const gemeindeSelectedStyle = { color:'#003a8f', weight:3, fillColor:'#004bb5', fillOpacity:0.45, dashArray:null };
+
+fetch('Gemeinden_ZH.geojson').then(r=>r.json()).then(g=>{
+  gemeindenLayer = L.geoJSON(g, {
+    style:gemeindeStyle,
+    onEachFeature:(f,l)=>{
+      const name=f.properties.NAME;
+      l.on('mouseover',()=>{ if(selectedGemeinde!==l) l.setStyle({ fillOpacity:.32, dashArray:null }); });
+      l.on('mouseout',()=>{ if(selectedGemeinde!==l) l.setStyle(gemeindeStyle); });
+      l.on('click',()=>{
+        if(selectedGemeinde){ selectedGemeinde.setStyle(gemeindeStyle); selectedGemeinde.unbindTooltip(); }
+        selectedGemeinde = l;
+        l.setStyle(gemeindeSelectedStyle);
+        l.bindTooltip(name,{ permanent:true, direction:'center', className:'gemeinde-label' }).openTooltip();
+      });
+    }
+  });
+});
+
+document.getElementById('toggleGemeinden').addEventListener('change', e=>{
+  if(!gemeindenLayer) return;
+  if(e.target.checked){ map.removeLayer(quadrantLayer); gemeindenLayer.addTo(map); }
+  else { map.addLayer(quadrantLayer); map.removeLayer(gemeindenLayer); }
+});
 
 /* ================= PISTEN ================= */
 let pisteLayer=null;
+fetch('ZRH_Pisten.geojson').then(r=>r.json()).then(g=>{
+  pisteLayer=L.geoJSON(g,{ style:{ color:'#d90429', weight:3 }});
+});
+document.getElementById('togglePiste').addEventListener('change',e=>{
+  if(!pisteLayer) return;
+  e.target.checked ? pisteLayer.addTo(map) : map.removeLayer(pisteLayer);
+});
 
-fetch('ZRH_Pisten.geojson')
-  .then(r=>r.json())
-  .then(g=>{
-    pisteLayer=L.geoJSON(g,{
-      style:{ color:'#d90429', weight:3 }
-    });
-  });
-
-document.getElementById('togglePiste')
-  .addEventListener('change',e=>{
-    if(!pisteLayer) return;
-    e.target.checked ? pisteLayer.addTo(map) : map.removeLayer(pisteLayer);
-  });
+/* ================= ROUTEN ================= */
+let routenLayer=null;
+fetch('ZRH_Routen.geojson').then(r=>r.json()).then(g=>{
+  routenLayer=L.geoJSON(g,{ style:{ color:'#ffa500', weight:3 }});
+});
+document.getElementById('toggleRouten').addEventListener('change',e=>{
+  if(!routenLayer) return;
+  e.target.checked ? routenLayer.addTo(map) : map.removeLayer(routenLayer);
+});
 
 /* ================= AUTOCOMPLETE ================= */
 const input=document.getElementById('addressInput');
@@ -311,7 +387,7 @@ const suggestions=document.getElementById('suggestions');
 let marker=null, timer=null;
 
 async function search(q){
-  const r=await fetch(
+  const r = await fetch(
     'https://nominatim.openstreetmap.org/search?' +
     new URLSearchParams({ q, format:'json', limit:5, countrycodes:'ch' })
   );
@@ -342,13 +418,12 @@ input.addEventListener('input',()=>{
   },300);
 });
 
-document.getElementById('searchBtn')
-  .addEventListener('click',async()=>{
-    const d=await search(input.value);
-    if(d.length) show(d[0]);
-  });
+document.getElementById('searchBtn').addEventListener('click',async()=>{
+  const d=await search(input.value);
+  if(d.length) show(d[0]);
+});
 
-document.addEventListener('click',e=>{
+document.addEventListener('click', e=>{
   if(!e.target.closest('.address-wrapper')) suggestions.innerHTML='';
 });
 </script>
