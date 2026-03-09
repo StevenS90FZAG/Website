@@ -1,432 +1,1326 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Bewegungsstatistik – Flughafen Zürich</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root{
-  --primary:#004bb5;
-  --primary-light:#e8f0ff;
-  --bg:#f4f6fa;
-  --card:#ffffff;
-  --border:#dcdfe6;
-  --text:#1f2937;
-  --radius:10px;
-  --shadow:0 4px 12px rgba(0,0,0,.06);
-  --container:1400px;
+:root {
+  --primary: #1414FA;
+  --primary-light: #ebebff;
+  --primary-dark: #0d0db8;
+  --accent: #32DCC8;
+  --accent-light: #e0faf7;
+  --red: #FF1E28;
+  --red-dark: #cc0010;
+  --yellow: #FAC800;
+  --gray: #808080;
+  --bg: #f4f5fb;
+  --card: #ffffff;
+  --border: #dde0f0;
+  --text: #1a1a2e;
+  --radius: 10px;
+  --shadow: 0 4px 12px rgba(20, 20, 250, 0.07);
+  --container: 1400px;
 }
 
-*{ box-sizing:border-box; }
+/* BASIC */
+* {
+  box-sizing: border-box;
+}
 
-html, body{
-  height:100%;
-  margin:0;
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:var(--bg);
-  color:var(--text);
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* MAP */
-#map{
-  position:fixed;
-  inset:0;
-  z-index:1;
+#map {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
 }
 
 /* HEADER */
-header{
-  position:fixed;
-  top:24px;
-  left:50%;
-  transform:translateX(-50%);
-  width:calc(100% - 48px);
-  max-width:var(--container);
-  padding:20px 24px;
-  background:var(--card);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  z-index:1000;
+header {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: var(--container);
+  padding: 20px 24px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 1000;
 }
 
-.header-title{
-  font-size:26px;
-  font-weight:600;
-  margin-bottom:4px;
+/* HEADER TOP WITH SEGMENTED CONTROL */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 14px;
 }
 
-.header-subtitle{
-  font-size:14px;
-  color:#4b5563;
-  margin-bottom:12px;
+.header-title {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.header-subtitle {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+/* MODERN TAB SWITCHER */
+.segmented {
+  display: inline-flex;
+  background: #ebebff;
+  border: 1px solid #c0c0fc;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  color: #5555c8;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.seg-btn svg {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.seg-btn:hover:not(.active) {
+  background: #d8d8fe;
+  color: var(--primary);
+}
+
+.seg-btn.active {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(20,20,250,0.12), 0 0 0 1px rgba(20,20,250,0.18);
+  color: var(--primary);
+}
+
+.seg-btn.active svg {
+  opacity: 1;
+}
+
+/* RESPONSIVE HEADER ON MOBILE */
+@media (max-width: 720px) {
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }
 
 /* HEADER ACTIONS */
-.header-actions{
-  position:absolute;
-  top:16px;
-  right:20px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  align-items:flex-end;
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 
-.toggle-row{
-  display:flex;
-  gap:6px;
+/* SWITCHER GROUPS */
+.toggle-row {
+  display: flex;
+  gap: 4px;
+}
+
+.hidden {
+  display: none !important;
 }
 
 /* INPUTS */
-.address-row{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-bottom:4px;
-  align-items:center;
+.address-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+  align-items: center;
 }
 
-.address-wrapper{
-  position:relative;
-  flex:1;
-  min-width:260px;
+.address-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 260px;
 }
 
-.address-row input{
-  width:100%;
-  padding:10px 12px;
-  font-size:14px;
-  border-radius:6px;
-  border:1px solid var(--border);
+.address-row input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
 }
 
 .address-row button,
-.reset-btn{
-  padding:8px 14px;
-  font-size:14px;
-  font-weight:500;
-  border-radius:6px;
-  border:1px solid var(--border);
-  background:#fff;
-  cursor:pointer;
+.reset-btn {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
 }
 
 .address-row button:hover,
-.reset-btn:hover{
-  background:var(--primary-light);
+.reset-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: #0d9080;
 }
 
 /* AUTOCOMPLETE */
-#suggestions{
-  position:absolute;
-  top:100%;
-  left:0;
-  right:0;
-  background:#fff;
-  border:1px solid var(--border);
-  border-top:none;
-  max-height:220px;
-  overflow-y:auto;
-  list-style:none;
-  margin:0;
-  padding:0;
-  z-index:2000;
+#suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--border);
+  border-top: none;
+  max-height: 220px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  z-index: 2000;
 }
 
-#suggestions li{
-  padding:8px 12px;
-  cursor:pointer;
-  font-size:14px;
+#suggestions li {
+  padding: 8px 12px;
+  cursor: pointer;
 }
 
-#suggestions li:hover{
-  background:var(--primary-light);
+#suggestions li:hover {
+  background: var(--primary-light);
 }
 
-/* TOGGLE */
-.toggle{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 10px;
-  background:var(--primary-light);
-  border-radius:999px;
-  font-size:14px;
-  cursor:pointer;
-  user-select:none;
+/* MODERN CHIP TOGGLES */
+.toggle-row {
+  background: #ebebff;
+  border: 1px solid #c0c0fc;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px !important;
 }
 
-.toggle input{ display:none; }
-
-.toggle-slider{
-  position:relative;
-  width:36px;
-  height:18px;
-  background:#cbd5e1;
-  border-radius:999px;
-  transition:.25s;
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background: transparent;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  color: #5a72a8;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
 }
 
-.toggle-slider::before{
-  content:"";
-  position:absolute;
-  top:2px;
-  left:2px;
-  width:14px;
-  height:14px;
-  background:#fff;
-  border-radius:50%;
-  transition:.25s;
+.toggle:hover {
+  background: #e2eaff;
+  color: #2c4fa3;
 }
 
-.toggle input:checked + .toggle-slider{
-  background:var(--primary);
+.toggle svg {
+  opacity: 0.55;
+  transition: opacity 0.18s;
+  flex-shrink: 0;
 }
 
-.toggle input:checked + .toggle-slider::before{
-  transform:translateX(18px);
+.toggle input {
+  display: none;
 }
 
-/* LABELS */
-.gemeinde-label{
-  background:rgba(255,255,255,0.9);
-  border:1px solid #004bb5;
-  color:#003a8f;
-  font-weight:600;
-  padding:4px 8px;
-  border-radius:6px;
-  box-shadow:0 2px 6px rgba(0,0,0,.2);
-  font-size:12px;
+.toggle-slider {
+  display: none;
 }
 
-/* Quadranten nur Buchstaben */
-.quadrant-label{
-  background: none;
-  border: none;
-  box-shadow: none;
-  color: #003a8f;
-  font-weight: 700;
-  font-size: 16px;
+/* Active/checked state */
+.toggle:has(input:checked) {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 75, 181, 0.28);
+}
+
+.toggle:has(input:checked) svg {
+  opacity: 1;
+}
+
+.toggle:has(input:checked):hover {
+  background: #003a8f;
+  color: #ffffff;
 }
 
 /* IMPRESSUM */
-.impressum{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:12px;
-  background:var(--card);
-  padding:6px 10px;
-  border-radius:6px;
-  box-shadow:var(--shadow);
-  z-index:1000;
+.impressum {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  font-size: 12px;
+  background: var(--card);
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  z-index: 1000;
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
 }
 
-/* ZOOM OFFSET */
-.leaflet-bottom.leaflet-left .leaflet-control-zoom{
-  margin-bottom:60px;
+.impressum:hover {
+  background: var(--accent-light);
+  color: #0daa9a;
 }
+
+
+/* ===== ROUTE POPUP MODAL ===== */
+/* Floating route panel - pointer-events:none so map stays interactive */
+#routeModal {
+  display: none;
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 3000;
+  pointer-events: none;
+}
+#routeModal.open { display: block; }
+
+#routeModalBox {
+  pointer-events: auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.06);
+  width: 420px;
+  max-width: calc(100vw - 64px);
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+  user-select: none;
+}
+
+#routeModalDragHandle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px 10px;
+  cursor: grab;
+  background: #f8faff;
+  border-bottom: 1px solid #e8edf5;
+}
+#routeModalDragHandle:active { cursor: grabbing; }
+
+#routeModalDragGrip {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  opacity: 0.35;
+}
+#routeModalDragGrip span {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #374151;
+  box-shadow: 0 6px 0 #374151, 0 12px 0 #374151,
+              6px 0 0 #374151, 6px 6px 0 #374151, 6px 12px 0 #374151;
+}
+
+#routeModalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  margin-left: 10px;
+}
+
+#routeModalClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+#routeModalClose:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+#routeModalBody {
+  padding: 12px 16px 16px;
+}
+
+#routeModalSubtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+#routeModalChartWrap {
+  height: 220px;
+  position: relative;
+}
+
+
+/* Route sub-tabs inside modal */
+#routeModalTabs {
+  display: none;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+#routeModalTabs.visible { display: flex; }
+
+.route-tab {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: 1px solid #c0c0fc;
+  background: #ebebff;
+  color: #5555c8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.route-tab:hover { background: #d8d8fe; color: var(--primary); }
+.route-tab.active {
+  background: #fff;
+  color: var(--primary);
+  box-shadow: 0 1px 4px rgba(20,20,250,0.12), 0 0 0 1.5px var(--primary);
+  border-color: transparent;
+}
+
+/* ZOOM BUTTON OFFSET */
+.leaflet-bottom.leaflet-left .leaflet-control-zoom {
+  margin-bottom: 60px;
+}
+
+/* ===== STATISTIK MODE ===== */
+#statsControls {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+body.mode-statistik #statsControls { display: flex; }
+
+/* In statistik mode hide map-specific controls */
+body.mode-statistik .address-row,
+body.mode-statistik .header-actions { display: none !important; }
+
+/* Stats button groups */
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background 0.2s;
+  white-space: nowrap;
+  color: var(--text);
+}
+.btn:hover { background: var(--primary-light); }
+.btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(20,20,250,0.18);
+}
+
+.stats-button-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.stats-button-group.scrollable {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.stats-header-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.custom-date {
+  display: none;
+  gap: 8px;
+  align-items: center;
+}
+
+
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+
+
+
+
 </style>
 </head>
 
 <body>
-
 <div id="map"></div>
 
 <header>
-  <div class="header-title">Bewegungsstatistik – Flughafen Zürich</div>
-  <div class="header-subtitle">
-    Geben Sie Ihre Adresse ein oder klicken Sie auf Ihre Region rund um den Flughafen.
+
+  <!-- TOP AREA WITH SEGMENTED CONTROL -->
+  <div class="header-top">
+    <div class="header-left">
+      <div class="header-title"><span style="color: var(--primary)">Bewegungsstatistik</span> – Flughafen Zürich</div>
+      <div class="header-subtitle">
+        Geben Sie Ihre Adresse ein oder klicken Sie auf Ihre Region rund um den Flughafen.
+      </div>
+    </div>
+
+    <div class="segmented">
+      <button class="seg-btn active" id="tabRouten">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 13 C4 10, 6 6, 8 8 C10 10, 12 5, 14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 3 L14 3 L14 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        An-/Abflugrouten
+      </button>
+      <button class="seg-btn" id="tabQuadranten">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+          <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+          <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+          <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"/>
+        </svg>
+        Quadranten
+      </button>
+      <button class="seg-btn" id="tabStatistik">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="8" width="3" height="7" rx="1" fill="currentColor"/>
+          <rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/>
+          <rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor"/>
+        </svg>
+        Bewegungsstatistik
+      </button>
+    </div>
   </div>
 
+  <!-- ADDRESS SEARCH -->
   <div class="address-row">
     <div class="address-wrapper">
-      <input id="addressInput" placeholder="Adresse eingeben" autocomplete="off">
+      <input id="addressInput" placeholder="Adresse eingeben" autocomplete="off" />
       <ul id="suggestions"></ul>
     </div>
     <button id="searchBtn">Adresse anzeigen</button>
     <button class="reset-btn" id="resetViewBtn">Zum Flughafen</button>
   </div>
 
-  <!-- Switcher -->
+  <!-- SWITCHERS -->
   <div class="header-actions">
-    <!-- Zeile 1: Pisten + Routen -->
-    <div class="toggle-row">
+    <div class="toggle-row" id="rowRoutes">
       <label class="toggle">
-        <input type="checkbox" id="togglePiste">
-        <span class="toggle-slider"></span>
-        <span>Pisten</span>
+        <input type="checkbox" id="toggleAnflug" />
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 5 L7 9.5 L5 12 L6.5 13 L10 10.5 L13 11.5 L14 10.5 L10.5 8 L11 5 L9.5 4.5 L8 7 L5.5 5.5 L5.5 4 Z" fill="currentColor"/>
+          <line x1="1" y1="2.5" x2="15" y2="2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>Anflug</span>
       </label>
 
       <label class="toggle">
-        <input type="checkbox" id="toggleRouten">
-        <span class="toggle-slider"></span>
-        <span>Routen</span>
+        <input type="checkbox" id="toggleAbflug" />
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 11 L7 6.5 L5 4 L6.5 3 L10 5.5 L13 4.5 L14 5.5 L10.5 8 L11 11 L9.5 11.5 L8 9 L5.5 10.5 L5.5 12 Z" fill="currentColor"/>
+          <line x1="1" y1="13.5" x2="15" y2="13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>Abflug</span>
       </label>
     </div>
 
-    <!-- Zeile 2: Gemeinden -->
-    <div class="toggle-row">
+    <div class="toggle-row" id="rowGemeinden">
       <label class="toggle">
-        <input type="checkbox" id="toggleGemeinden">
-        <span class="toggle-slider"></span>
+        <input type="checkbox" id="toggleGemeinden" />
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 4 L8 2 L14 4 L14 9 C14 12 8 14.5 8 14.5 C8 14.5 2 12 2 9 Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+          <circle cx="8" cy="7.5" r="1.8" fill="currentColor"/>
+        </svg>
         <span>Gemeinden</span>
       </label>
     </div>
   </div>
+
+  <!-- STATISTIK CONTROLS (shown only in statistik mode) -->
+  <div id="statsControls">
+    <!-- Zeitraum -->
+    <div class="stats-button-group scrollable" id="statsTimeToggle">
+      <button id="btnYesterday" class="btn">Gestern</button>
+      <button id="btnToday" class="btn">Heute</button>
+      <button id="btnWeek" class="btn">Woche</button>
+      <button id="btnMonth" class="btn">Monat</button>
+      <button id="btnYear" class="btn">Jahr</button>
+      <button id="btnCustom" class="btn">Benutzerdefiniert</button>
+      <div class="custom-date" id="customDateRow">
+        <input type="date" id="customStart">
+        <input type="date" id="customEnd">
+        <button id="applyCustom" class="btn">Anwenden</button>
+      </div>
+    </div>
+    <!-- Zeitfenster -->
+    <div class="stats-button-group" id="statsTimeOfDay">
+      <button id="tdMorning" class="btn">Morgens 06–07</button>
+      <button id="tdDay" class="btn active">Tag 07–22</button>
+      <button id="tdNight" class="btn">Nacht 22–06</button>
+      <button id="tdAll" class="btn">Ganzer Tag</button>
+    </div>
+
+  </div>
+
 </header>
 
-<div class="impressum">© Abteilung OVL, Flughafen Zürich AG</div>
+
+<a class="impressum" href="https://www.flughafen-zuerich.ch/de/unternehmen/verantwortung/laerm-und-schallschutz/laermmonitoring" target="_blank" rel="noopener">© Abteilung OVL, Flughafen Zürich AG</a>
+
+<!-- FLOATING ROUTE PANEL -->
+<div id="routeModal">
+  <div id="routeModalBox">
+    <div id="routeModalDragHandle">
+      <div id="routeModalDragGrip"><span></span><span></span></div>
+      <div id="routeModalTitle">Route</div>
+      <button id="routeModalClose" title="Schliessen">&#x2715;</button>
+    </div>
+    <div id="routeModalBody">
+      <div id="routeModalTabs"></div>
+      <div id="routeModalSubtitle"></div>
+      <div id="routeModalChartWrap">
+        <canvas id="routeModalChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ================= MAP INIT ================= */
+/* MAP INIT */
 const airportCenter = [47.458, 8.555];
 const airportZoom = 11;
+const map = L.map("map", { center: airportCenter, zoom: airportZoom, zoomControl: false });
+L.control.zoom({ position: "bottomleft" }).addTo(map);
 
-const map = L.map('map', { center: airportCenter, zoom: airportZoom, zoomControl:false });
-L.control.zoom({ position:'bottomleft' }).addTo(map);
-
-L.tileLayer.wms('https://wms.geo.admin.ch/', {
-  layers:'ch.swisstopo.pixelkarte-farbe',
-  opacity:0.4,
-  attribution:'© swisstopo'
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+  subdomains: "abcd",
+  maxZoom: 19,
 }).addTo(map);
 
-/* ================= RESET ================= */
-document.getElementById('resetViewBtn')
-  .addEventListener('click', () => { map.setView(airportCenter, airportZoom); });
+/* RESET */
+document.getElementById("resetViewBtn").addEventListener("click", () =>
+  map.setView(airportCenter, airportZoom)
+);
 
-/* ================= QUADRANTEN ================= */
-const bounds = { north:47.60, south:47.32, west:8.30, east:8.80 };
+/* QUADRANTS */
+const bounds = { north: 47.6, south: 47.32, west: 8.3, east: 8.8 };
 const styles = {
-  nw:{ color:'#003a8f', fillColor:'#004bb5' },
-  ne:{ color:'#005fd1', fillColor:'#2f6fff' },
-  sw:{ color:'#006bb3', fillColor:'#5b8dff' },
-  se:{ color:'#004bb5', fillColor:'#89aaff' }
+  nw: { color: "#0d0db8", fillColor: "#1414FA" },   // Blau
+  ne: { color: "#1aaa98", fillColor: "#32DCC8" },   // Türkis
+  sw: { color: "#cc0010", fillColor: "#FF1E28" },   // Rot
+  se: { color: "#c89e00", fillColor: "#FAC800" },   // Gelb
 };
 
 const quadrantLayer = L.layerGroup().addTo(map);
 
-function addQuadrant(b, style, url, label){
-  const r = L.rectangle(b,{ ...style, weight:2, fillOpacity:.18, dashArray:'4,4' });
-  r.on('mouseover',()=>r.setStyle({ fillOpacity:.32, dashArray:null }));
-  r.on('mouseout',()=>r.setStyle({ fillOpacity:.18, dashArray:'4,4' }));
-  r.on('click',()=>window.location.href=url);
+function addQuadrant(b, style, url, label) {
+  const r = L.rectangle(b, { ...style, weight: 2, fillOpacity: 0.18, dashArray: "4,4" });
+  r.on("mouseover", () => r.setStyle({ fillOpacity: 0.32, dashArray: null }));
+  r.on("mouseout", () => r.setStyle({ fillOpacity: 0.18, dashArray: "4,4" }));
+  r.on("click", () => (window.location.href = url));
 
-  // Tooltip direkt am Rechteck, nur Buchstaben
   r.bindTooltip(label, {
     permanent: true,
-    direction: 'center',
-    className: 'quadrant-label'
+    direction: "center",
+    className: "quadrant-label",
   });
 
   quadrantLayer.addLayer(r);
 }
 
-addQuadrant([[airportCenter[0],bounds.west],[bounds.north,airportCenter[1]]],styles.nw,'seite1.html','NW');
-addQuadrant([[airportCenter[0],airportCenter[1]],[bounds.north,bounds.east]],styles.ne,'seite2.html','NE');
-addQuadrant([[bounds.south,bounds.west],[airportCenter[0],airportCenter[1]]],styles.sw,'seite3.html','SW');
-addQuadrant([[bounds.south,airportCenter[1]],[airportCenter[0],bounds.east]],styles.se,'seite4.html','SE');
+addQuadrant([[airportCenter[0], bounds.west], [bounds.north, airportCenter[1]]], styles.nw, "seite1.html", "NW");
+addQuadrant([[airportCenter[0], airportCenter[1]], [bounds.north, bounds.east]], styles.ne, "seite2.html", "NE");
+addQuadrant([[bounds.south, bounds.west], [airportCenter[0], airportCenter[1]]], styles.sw, "seite3.html", "SW");
+addQuadrant([[bounds.south, airportCenter[1]], [airportCenter[0], bounds.east]], styles.se, "seite4.html", "SE");
 
-/* ================= GEMEINDEN ================= */
+/* GEMEINDEN */
 let gemeindenLayer = null;
 let selectedGemeinde = null;
-const gemeindeStyle = { color:'#004bb5', weight:2, fillColor:'#5b8dff', fillOpacity:.18, dashArray:'4,4' };
-const gemeindeSelectedStyle = { color:'#003a8f', weight:3, fillColor:'#004bb5', fillOpacity:0.45, dashArray:null };
 
-fetch('Gemeinden_ZH.geojson').then(r=>r.json()).then(g=>{
-  gemeindenLayer = L.geoJSON(g, {
-    style:gemeindeStyle,
-    onEachFeature:(f,l)=>{
-      const name=f.properties.NAME;
-      l.on('mouseover',()=>{ if(selectedGemeinde!==l) l.setStyle({ fillOpacity:.32, dashArray:null }); });
-      l.on('mouseout',()=>{ if(selectedGemeinde!==l) l.setStyle(gemeindeStyle); });
-      l.on('click',()=>{
-        if(selectedGemeinde){ selectedGemeinde.setStyle(gemeindeStyle); selectedGemeinde.unbindTooltip(); }
-        selectedGemeinde = l;
-        l.setStyle(gemeindeSelectedStyle);
-        l.bindTooltip(name,{ permanent:true, direction:'center', className:'gemeinde-label' }).openTooltip();
+const gemeindeStyle = {
+  color: "#004bb5",
+  weight: 2,
+  fillColor: "#5b8dff",
+  fillOpacity: 0.18,
+  dashArray: "4,4",
+};
+
+const gemeindeSelectedStyle = {
+  color: "#003a8f",
+  weight: 3,
+  fillColor: "#004bb5",
+  fillOpacity: 0.45,
+  dashArray: null,
+};
+
+fetch("Gemeinden_ZH.geojson")
+  .then((r) => r.json())
+  .then((g) => {
+    gemeindenLayer = L.geoJSON(g, {
+      style: gemeindeStyle,
+      onEachFeature: (f, l) => {
+        const name = f.properties.NAME;
+        l.on("mouseover", () => {
+          if (selectedGemeinde !== l) l.setStyle({ fillOpacity: 0.32, dashArray: null });
+        });
+        l.on("mouseout", () => {
+          if (selectedGemeinde !== l) l.setStyle(gemeindeStyle);
+        });
+        l.on("click", () => {
+          if (selectedGemeinde) {
+            selectedGemeinde.setStyle(gemeindeStyle);
+            selectedGemeinde.unbindTooltip();
+          }
+          selectedGemeinde = l;
+          l.setStyle(gemeindeSelectedStyle);
+          l.bindTooltip(name, {
+            permanent: true,
+            direction: "center",
+            className: "gemeinde-label",
+          }).openTooltip();
+        });
+      },
+    });
+  });
+
+document.getElementById("toggleGemeinden").addEventListener("change", (e) => {
+  if (!gemeindenLayer) return;
+
+  if (e.target.checked) {
+    map.removeLayer(quadrantLayer);
+    gemeindenLayer.addTo(map);
+  } else {
+    map.addLayer(quadrantLayer);
+    map.removeLayer(gemeindenLayer);
+  }
+});
+
+/* PISTEN */
+let pisteLayer = null;
+fetch("ZRH_Pisten.geojson")
+  .then((r) => r.json())
+  .then((g) => {
+    pisteLayer = L.geoJSON(g, { style: { color: "#111111", weight: 5, lineCap: "square", lineJoin: "miter" } });
+    pisteLayer.addTo(map);
+  });
+
+
+/* ROUTES (ANFLUG + ABFLUG) */
+let anflugLayer = L.layerGroup();
+let abflugLayer = L.layerGroup();
+
+// Color themes tuned for CartoDB Positron (light background)
+const THEME = {
+  anflug: {
+    color:       "#1414FA",   // Blau
+    colorHover:  "#0d0db8",
+    opacity:     0.75,
+    weight:      3,
+  },
+  anflugEnd: {
+    color:       "#32DCC8",   // Türkis
+    colorHover:  "#1aaa98",
+    opacity:     0.60,
+    weight:      2.5,
+    dashArray:   "5,9",
+  },
+  abflug: {
+    color:       "#FF1E28",   // Rot
+    colorHover:  "#cc0010",
+    opacity:     0.75,
+    weight:      3,
+  },
+};
+
+// Registry: routeName -> [{layer, geoJsonLayer, theme}]
+const routeRegistry = {};
+let activeRoute  = null;  // clicked/pinned route
+let hoveredRoute = null;  // currently hovered route
+let mouseoutTimer = null;
+
+function registerRoute(routeName, layer, geoJsonLayer, theme) {
+  if (!routeRegistry[routeName]) routeRegistry[routeName] = [];
+  routeRegistry[routeName].push({ layer, geoJsonLayer, theme });
+}
+
+function highlightRoute(routeName) {
+  if (!routeRegistry[routeName]) return;
+  routeRegistry[routeName].forEach(({ layer, theme: th }) => {
+    const ht = THEME[th];
+    layer.setStyle({ color: ht.colorHover, opacity: 1, weight: ht.weight + 2 });
+  });
+}
+
+function resetRoute(routeName) {
+  if (!routeRegistry[routeName]) return;
+  routeRegistry[routeName].forEach(({ layer, geoJsonLayer }) => {
+    geoJsonLayer.resetStyle(layer);
+  });
+}
+
+function clearActiveRoute() {
+  if (!activeRoute) return;
+  routeRegistry[activeRoute]?.forEach(({ layer }) => {
+    try { layer.closeTooltip(); } catch(e) {}
+  });
+  // Only reset style if not currently hovered
+  if (hoveredRoute !== activeRoute) resetRoute(activeRoute);
+  activeRoute = null;
+}
+
+function toggleRouteClick(routeName, cx, cy) {
+  if (activeRoute) clearActiveRoute();
+  activeRoute = routeName;
+  highlightRoute(routeName);
+  openRouteModal(routeName, cx, cy);
+}
+
+// Click on map background deselects active route
+map.on("click", (e) => {
+  if (activeRoute && !e.originalEvent._fromRoute) clearActiveRoute();
+});
+
+function loadGeoJsonToLayer(url, targetLayer, theme = "anflug") {
+  const t = THEME[theme];
+
+  fetch(url)
+    .then((r) => r.json())
+    .then((geojson) => {
+      const geoJsonLayer = L.geoJSON(geojson, {
+        style: () => ({
+          color:     t.color,
+          weight:    t.weight,
+          opacity:   t.opacity,
+          dashArray: t.dashArray ?? null,
+          lineCap:   "round",
+          lineJoin:  "round",
+        }),
+        onEachFeature: (f, l) => {
+          const routeName = f.properties?.Route;
+          if (!routeName) return;
+
+          l.bindTooltip(routeName, {
+            permanent: false,
+            direction: "center",
+            className: "route-label",
+          });
+
+          setTimeout(() => registerRoute(routeName, l, geoJsonLayer, theme), 0);
+
+          l.on("click", (e) => {
+            e.originalEvent._fromRoute = true;
+            toggleRouteClick(routeName, e.originalEvent.clientX, e.originalEvent.clientY);
+          });
+
+          l.on("mouseover", () => {
+            // Cancel any pending mouseout reset
+            clearTimeout(mouseoutTimer);
+            // Reset previously hovered route if different and not active
+            if (hoveredRoute && hoveredRoute !== routeName && hoveredRoute !== activeRoute) {
+              resetRoute(hoveredRoute);
+            }
+            hoveredRoute = routeName;
+            highlightRoute(routeName);
+          });
+
+          l.on("mouseout", () => {
+            // Debounce: moving between segments of same route fires mouseout/mouseover rapidly
+            mouseoutTimer = setTimeout(() => {
+              if (hoveredRoute === routeName) {
+                hoveredRoute = null;
+                // Only reset if not the pinned active route
+                if (activeRoute !== routeName) resetRoute(routeName);
+              }
+            }, 30);
+          });
+        },
       });
-    }
+
+      targetLayer.addLayer(geoJsonLayer);
+    });
+}
+
+loadGeoJsonToLayer("Anflug_Routen.geojson",   anflugLayer, "anflug");
+loadGeoJsonToLayer("Endanflug_Routen.geojson", anflugLayer, "anflugEnd");
+loadGeoJsonToLayer("Abflug_Routen.geojson",    abflugLayer, "abflug");
+
+const toggleAnflug = document.getElementById("toggleAnflug");
+const toggleAbflug = document.getElementById("toggleAbflug");
+
+function setAnflugAbflug(active) {
+  // active = 'anflug' | 'abflug' | null
+  toggleAnflug.checked = active === 'anflug';
+  toggleAbflug.checked = active === 'abflug';
+  toggleAnflug.closest('.toggle').classList.toggle('is-on', active === 'anflug');
+  toggleAbflug.closest('.toggle').classList.toggle('is-on', active === 'abflug');
+  active === 'anflug' ? anflugLayer.addTo(map) : map.removeLayer(anflugLayer);
+  active === 'abflug' ? abflugLayer.addTo(map) : map.removeLayer(abflugLayer);
+}
+
+toggleAnflug.addEventListener("change", (e) => {
+  setAnflugAbflug(e.target.checked ? 'anflug' : null);
+});
+
+toggleAbflug.addEventListener("change", (e) => {
+  setAnflugAbflug(e.target.checked ? 'abflug' : null);
+});
+
+/* ADDRESS SEARCH */
+const GEOAPIFY_KEY = "6c74281db1c144df826be449285e8b2a";
+let addressMarker = null;
+let debounceTimer = null;
+
+const addressInput = document.getElementById("addressInput");
+const suggestions = document.getElementById("suggestions");
+const searchBtn = document.getElementById("searchBtn");
+
+function setMarker(lat, lon, label) {
+  if (addressMarker) map.removeLayer(addressMarker);
+  addressMarker = L.marker([lat, lon]).addTo(map);
+  if (label) addressMarker.bindPopup(label).openPopup();
+  map.setView([lat, lon], 14);
+}
+
+async function searchAddress(query) {
+  if (!query) return;
+
+  try {
+    const response = await fetch(
+      `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
+        query
+      )}&filter=countrycode:ch&limit=1&apiKey=${GEOAPIFY_KEY}`
+    );
+
+    if (!response.ok) throw new Error("API Fehler");
+    const data = await response.json();
+    if (!data.features.length) return alert("Adresse nicht gefunden.");
+
+    const f = data.features[0];
+    setMarker(f.geometry.coordinates[1], f.geometry.coordinates[0], f.properties.formatted);
+    suggestions.innerHTML = "";
+  } catch (e) {
+    alert("Adresssuche momentan nicht verfügbar.");
+  }
+}
+
+searchBtn.addEventListener("click", () => searchAddress(addressInput.value));
+
+addressInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    searchAddress(addressInput.value);
+  }
+});
+
+addressInput.addEventListener("input", () => {
+  const q = addressInput.value;
+  if (q.length < 3) return (suggestions.innerHTML = "");
+
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+          q
+        )}&filter=countrycode:ch&limit=5&apiKey=${GEOAPIFY_KEY}`
+      );
+
+      if (!r.ok) throw new Error("Autocomplete Fehler");
+      const data = await r.json();
+      suggestions.innerHTML = "";
+
+      data.features.forEach((place) => {
+        const li = document.createElement("li");
+        li.textContent = place.properties.formatted;
+        li.onclick = () => {
+          addressInput.value = place.properties.formatted;
+          suggestions.innerHTML = "";
+          setMarker(place.geometry.coordinates[1], place.geometry.coordinates[0], place.properties.formatted);
+        };
+        suggestions.appendChild(li);
+      });
+    } catch (e) {}
+  }, 350);
+});
+
+/* TABS + MODE LOGIC */
+const tabRouten = document.getElementById("tabRouten");
+const tabQuadranten = document.getElementById("tabQuadranten");
+const rowRoutes = document.getElementById("rowRoutes");
+const rowGemeinden = document.getElementById("rowGemeinden");
+
+function setMode(mode) {
+  tabRouten.classList.toggle("active", mode === "routen");
+  tabQuadranten.classList.toggle("active", mode === "quadranten");
+  document.getElementById("tabStatistik").classList.toggle("active", mode === "statistik");
+
+  // Body class for CSS-driven layout switching
+  document.body.classList.toggle("mode-statistik", mode === "statistik");
+
+  if (mode === "statistik") {
+    // Keep map state exactly as-is — only swap header controls
+    rowRoutes.classList.remove("hidden");
+    rowGemeinden.classList.add("hidden");
+    return;
+  }
+
+  rowRoutes.classList.toggle("hidden", mode !== "routen");
+  rowGemeinden.classList.toggle("hidden", mode !== "quadranten");
+
+  const tGemeinden = document.getElementById("toggleGemeinden");
+  const tAnflug = document.getElementById("toggleAnflug");
+  const tAbflug = document.getElementById("toggleAbflug");
+
+  if (mode === "routen") {
+    if (tGemeinden) tGemeinden.checked = false;
+    try { map.removeLayer(gemeindenLayer); } catch(e){}
+    try { map.removeLayer(quadrantLayer); } catch(e){}
+
+    if (tAnflug) tAnflug.checked = false;
+    if (tAbflug) tAbflug.checked = false;
+    try { map.removeLayer(anflugLayer); } catch(e){}
+    try { map.removeLayer(abflugLayer); } catch(e){}
+    document.getElementById('toggleAnflug').closest('.toggle').classList.remove('is-on');
+    document.getElementById('toggleAbflug').closest('.toggle').classList.remove('is-on');
+  }
+
+  if (mode === "quadranten") {
+    if (tAnflug) tAnflug.checked = false;
+    if (tAbflug) tAbflug.checked = false;
+    try { map.removeLayer(anflugLayer); } catch(e){}
+    try { map.removeLayer(abflugLayer); } catch(e){}
+    document.getElementById('toggleAnflug').closest('.toggle').classList.remove('is-on');
+    document.getElementById('toggleAbflug').closest('.toggle').classList.remove('is-on');
+
+    if (tGemeinden) tGemeinden.checked = false;
+    try { quadrantLayer.addTo(map); } catch(e){}
+    try { map.removeLayer(gemeindenLayer); } catch(e){}
+  }
+}
+
+const tabStatistik = document.getElementById("tabStatistik");
+tabRouten.addEventListener("click", () => setMode("routen"));
+tabQuadranten.addEventListener("click", () => setMode("quadranten"));
+tabStatistik.addEventListener("click", () => setMode("statistik"));
+
+/* Refresh modal when filter buttons change (only if modal is open & a route selected) */
+function refreshModalIfOpen() {
+  if (activeRoute && document.getElementById("routeModal").classList.contains("open")) {
+    const subRoutes = splitRoutes(activeRoute);
+    const sub = subRoutes.includes(modalActiveSubRoute) ? modalActiveSubRoute : subRoutes[0];
+    renderModalForSubRoute(activeRoute, subRoutes, sub);
+  }
+}
+
+// Time range buttons
+["btnYesterday","btnToday","btnWeek","btnMonth","btnYear"].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => {
+    document.querySelectorAll("#statsTimeToggle .btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    document.getElementById("customDateRow").style.display = "none";
+    refreshModalIfOpen();
+  });
+});
+document.getElementById("btnCustom").addEventListener("click", () => {
+  document.querySelectorAll("#statsTimeToggle .btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("btnCustom").classList.add("active");
+  document.getElementById("customDateRow").style.display = "flex";
+});
+document.getElementById("applyCustom").addEventListener("click", () => refreshModalIfOpen());
+
+// Time-of-day buttons
+["tdMorning","tdDay","tdNight","tdAll"].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => {
+    document.querySelectorAll("#statsTimeOfDay .btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    refreshModalIfOpen();
   });
 });
 
-document.getElementById('toggleGemeinden').addEventListener('change', e=>{
-  if(!gemeindenLayer) return;
-  if(e.target.checked){ map.removeLayer(quadrantLayer); gemeindenLayer.addTo(map); }
-  else { map.addLayer(quadrantLayer); map.removeLayer(gemeindenLayer); }
+/* DEFAULT START */
+setMode("routen");
+
+/* CHIP TOGGLE SYNC (Pisten & Gemeinden) */
+document.querySelectorAll('.toggle input[type="checkbox"]').forEach(cb => {
+  if (cb.id === 'toggleAnflug' || cb.id === 'toggleAbflug') return;
+  const label = cb.closest('.toggle');
+  cb.addEventListener('change', () => {
+    label.classList.toggle('is-on', cb.checked);
+  });
 });
 
-/* ================= PISTEN ================= */
-let pisteLayer=null;
-fetch('ZRH_Pisten.geojson').then(r=>r.json()).then(g=>{
-  pisteLayer=L.geoJSON(g,{ style:{ color:'#d90429', weight:3 }});
-});
-document.getElementById('togglePiste').addEventListener('change',e=>{
-  if(!pisteLayer) return;
-  e.target.checked ? pisteLayer.addTo(map) : map.removeLayer(pisteLayer);
-});
 
-/* ================= ROUTEN ================= */
-let routenLayer=null;
-fetch('ZRH_Routen.geojson').then(r=>r.json()).then(g=>{
-  routenLayer=L.geoJSON(g,{ style:{ color:'#ffa500', weight:3 }});
-});
-document.getElementById('toggleRouten').addEventListener('change',e=>{
-  if(!routenLayer) return;
-  e.target.checked ? routenLayer.addTo(map) : map.removeLayer(routenLayer);
-});
+/* BEWEGUNGSSTATISTIK: Charts removed — filtering handled via openRouteModal */
 
-/* ================= AUTOCOMPLETE ================= */
-const input=document.getElementById('addressInput');
-const suggestions=document.getElementById('suggestions');
-let marker=null, timer=null;
+/* ===== GLOBAL CSV DATA (for route popup) ===== */
+let globalRows = [];
+let globalIdx  = {};
+let csvLoaded  = false;
 
-async function search(q){
-  const r = await fetch(
-    'https://nominatim.openstreetmap.org/search?' +
-    new URLSearchParams({ q, format:'json', limit:5, countrycodes:'ch' })
-  );
-  return r.json();
+async function ensureCsvLoaded() {
+  if (csvLoaded) return;
+  csvLoaded = true;
+  try {
+    const res   = await fetch("Data.csv", { cache: "no-store" });
+    const text  = await res.text();
+    const lines = text.replace(/\r/g,"").trim().split("\n");
+    if (lines.length < 2) return;
+    const sep  = lines[0].includes(";") ? ";" : ",";
+    const hdrs = lines[0].split(sep).map(h => h.trim());
+    globalIdx  = Object.fromEntries(hdrs.map((h,i) => [h,i]));
+    globalRows = lines.slice(1).map(l => l.split(sep)).filter(r => r[globalIdx.DatZeit_LT]);
+  } catch(e) { console.warn("CSV load failed", e); }
+}
+ensureCsvLoaded();
+
+/* ===== ROUTE MODAL ===== */
+let modalChart = null;
+
+function parseModalDate(v) {
+  if (!v) return null;
+  const [d] = v.split(" ");
+  const [dd, mm, yy] = d.split(".");
+  return new Date(yy, mm - 1, dd);
 }
 
-function show(item){
-  suggestions.innerHTML='';
-  input.value=item.display_name;
-  if(marker) map.removeLayer(marker);
-  marker=L.marker([+item.lat,+item.lon]).addTo(map)
-    .bindPopup(item.display_name).openPopup();
-  map.setView([+item.lat,+item.lon],14);
+// Parse multiple routes from a feature's Route string (e.g. "E16, F16" → ["E16","F16"])
+function splitRoutes(routeName) {
+  return routeName.split(/[,;/]+/).map(r => r.trim()).filter(Boolean);
 }
 
-input.addEventListener('input',()=>{
-  clearTimeout(timer);
-  if(input.value.length<3){ suggestions.innerHTML=''; return; }
-  timer=setTimeout(async()=>{
-    const data=await search(input.value);
-    suggestions.innerHTML='';
-    data.forEach(i=>{
-      const li=document.createElement('li');
-      li.textContent=i.display_name;
-      li.onclick=()=>show(i);
-      suggestions.appendChild(li);
+// Currently selected sub-route within the modal (for multi-route features)
+let modalActiveSubRoute = null;
+
+function openRouteModal(routeName, cx, cy) {
+  const subRoutes = splitRoutes(routeName);
+  // Pick active sub-route: keep existing if valid, else first
+  if (!subRoutes.includes(modalActiveSubRoute)) modalActiveSubRoute = subRoutes[0];
+
+  renderModalForSubRoute(routeName, subRoutes, modalActiveSubRoute);
+
+  // Reset position on fresh open
+  const panel = document.getElementById("routeModal");
+  panel.style.left = panel.style.top = panel.style.right = panel.style.bottom = "";
+  panel.classList.add("open");
+}
+
+function renderModalForSubRoute(routeName, subRoutes, subRoute) {
+  const bwValue = toggleAnflug.checked ? "L" : toggleAbflug.checked ? "S" : null;
+  const bwLabel = toggleAnflug.checked ? "Anflüge" : toggleAbflug.checked ? "Abflüge" : "Alle Bewegungen";
+  const color   = toggleAnflug.checked ? "#1414FA" : toggleAbflug.checked ? "#FF1E28" : "#1414FA";
+
+  // Time filters
+  const activeTimeBtn = document.querySelector('#statsTimeToggle .btn.active');
+  const timeRange     = activeTimeBtn ? activeTimeBtn.id.replace('btn','').toLowerCase() : null;
+  const activeTodBtn  = document.querySelector('#statsTimeOfDay .btn.active');
+  const todId         = activeTodBtn ? activeTodBtn.id : 'tdAll';
+  const timeLabel     = activeTimeBtn ? activeTimeBtn.textContent.trim() : 'Alle Zeit';
+  const todLabel      = activeTodBtn  ? activeTodBtn.textContent.trim()  : 'Ganzer Tag';
+
+  function inRange(v) {
+    if (!v) return false;
+    const d = parseModalDate(v);
+    if (!d) return false;
+    const now = new Date();
+    switch(timeRange) {
+      case 'today':     return d.toDateString() === now.toDateString();
+      case 'yesterday': { const y=new Date(); y.setDate(now.getDate()-1); return d.toDateString()===y.toDateString(); }
+      case 'week':      { const w=new Date(); w.setDate(now.getDate()-6); return d>=w && d<=now; }
+      case 'month':     return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+      case 'year':      return d.getFullYear()===now.getFullYear();
+      case 'custom': {
+        const cs=document.getElementById('customStart')?.value;
+        const ce=document.getElementById('customEnd')?.value;
+        if(!cs||!ce) return true;
+        return d>=new Date(cs) && d<=new Date(ce);
+      }
+      default: return true;
+    }
+  }
+
+  function inTimeOfDay(v) {
+    if (!v) return false;
+    const parts = v.split(' ');
+    if (parts.length < 2) return true;
+    const hour = parseInt(parts[1].split(':')[0], 10);
+    switch(todId) {
+      case 'tdMorning': return hour >= 6 && hour < 7;
+      case 'tdDay':     return hour >= 7 && hour < 22;
+      case 'tdNight':   return hour >= 22 || hour < 6;
+      default:          return true;
+    }
+  }
+
+  // Filter rows for the active sub-route
+  let rows = globalRows.filter(r => (r[globalIdx.Route] || "").trim() === subRoute);
+  if (bwValue) rows = rows.filter(r => r[globalIdx.BW] === bwValue);
+  rows = rows.filter(r => inRange(r[globalIdx.DatZeit_LT]) && inTimeOfDay(r[globalIdx.DatZeit_LT]));
+
+  // Group by date
+  const dayMap = {};
+  rows.forEach(r => {
+    const d = parseModalDate(r[globalIdx.DatZeit_LT]);
+    if (!d) return;
+    const key = `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
+    dayMap[key] = (dayMap[key] || 0) + 1;
+  });
+  const sorted = Object.keys(dayMap)
+    .map(k => { const [dd,mm,yy] = k.split(".").map(Number); return { key: k, date: new Date(yy,mm-1,dd) }; })
+    .sort((a,b) => a.date - b.date);
+
+  // Title: show full feature route name
+  document.getElementById("routeModalTitle").textContent    = routeName;
+  document.getElementById("routeModalSubtitle").textContent = bwLabel + " · " + timeLabel + " · " + todLabel + " — " + rows.length + " Bewegungen";
+
+  // Render sub-route tabs (only if multiple)
+  const tabsEl = document.getElementById("routeModalTabs");
+  tabsEl.innerHTML = "";
+  if (subRoutes.length > 1) {
+    tabsEl.classList.add("visible");
+    subRoutes.forEach(sr => {
+      const btn = document.createElement("button");
+      btn.className = "route-tab" + (sr === subRoute ? " active" : "");
+      btn.textContent = sr;
+      btn.addEventListener("click", () => {
+        modalActiveSubRoute = sr;
+        renderModalForSubRoute(routeName, subRoutes, sr);
+      });
+      tabsEl.appendChild(btn);
     });
-  },300);
-});
+  } else {
+    tabsEl.classList.remove("visible");
+  }
 
-document.getElementById('searchBtn').addEventListener('click',async()=>{
-  const d=await search(input.value);
-  if(d.length) show(d[0]);
-});
+  // Chart
+  if (modalChart) { modalChart.destroy(); modalChart = null; }
+  modalChart = new Chart(document.getElementById("routeModalChart"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(d => d.key),
+      datasets: [{
+        label: bwLabel,
+        data: sorted.map(d => dayMap[d.key]),
+        backgroundColor: color,
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxRotation: 45, font: { size: 11 } }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  });
+}
 
-document.addEventListener('click', e=>{
-  if(!e.target.closest('.address-wrapper')) suggestions.innerHTML='';
-});
+function closeRouteModal() {
+  document.getElementById("routeModal").classList.remove("open");
+}
+
+document.getElementById("routeModalClose").addEventListener("click", closeRouteModal);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeRouteModal(); });
+
+/* Draggable panel */
+(function() {
+  const panel  = document.getElementById("routeModal");
+  const handle = document.getElementById("routeModalDragHandle");
+  let dragging = false, ox = 0, oy = 0;
+
+  handle.addEventListener("mousedown", e => {
+    if (e.target.closest("#routeModalClose")) return;
+    dragging = true;
+    const rect = panel.getBoundingClientRect();
+    ox = e.clientX - rect.left;
+    oy = e.clientY - rect.top;
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+    panel.style.left = rect.left + "px";
+    panel.style.top  = rect.top  + "px";
+    document.body.style.userSelect = "none";
+  });
+
+  document.addEventListener("mousemove", e => {
+    if (!dragging) return;
+    panel.style.left = (e.clientX - ox) + "px";
+    panel.style.top  = (e.clientY - oy) + "px";
+  });
+
+  document.addEventListener("mouseup", () => {
+    dragging = false;
+    document.body.style.userSelect = "";
+  });
+})();
+
 </script>
+
 
 </body>
 </html>
